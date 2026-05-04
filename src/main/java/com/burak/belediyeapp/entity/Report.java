@@ -70,6 +70,22 @@ public class Report extends BaseEntity {
     private List<ReportMedia> mediaList = new ArrayList<>();
 
     /**
+     * Raporun ait olduğu ilçe (Kadıköy, Beşiktaş vb.)
+     * Frontend'den koordinat bazlı tespit edilip gönderilir.
+     */
+    @Column(length = 100)
+    private String district;
+
+    @Column(length = 255)
+    private String fcmToken;
+
+    @Column(length = 20)
+    private String aiPriority;
+
+    @Column(columnDefinition = "TEXT")
+    private String aiSummary;
+
+    /**
      * Durum değişikliği geçmişi — auditability için.
      */
     @OneToMany(mappedBy = "report", cascade = CascadeType.ALL)

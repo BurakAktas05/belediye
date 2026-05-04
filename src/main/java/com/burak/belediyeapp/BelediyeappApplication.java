@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
  */
 @SpringBootApplication
 @EnableAsync
+@org.springframework.cache.annotation.EnableCaching
 public class BelediyeappApplication {
 
     public static void main(String[] args) {

@@ -60,6 +60,16 @@ public class AppUser extends BaseEntity implements UserDetails {
     private Department department;
 
     /**
+     * Kullanıcının bağlı olduğu ilçe.
+     * Sadece bu ilçenin raporlarını görebilir.
+     */
+    @Column(length = 100)
+    private String district;
+
+    @Column(length = 255)
+    private String fcmToken;
+
+    /**
      * Kullanıcı rolleri. EAGER yüklenir çünkü her request'te
      * yetki kontrolü için gereklidir.
      */

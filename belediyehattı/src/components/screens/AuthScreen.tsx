@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Lock, User, Phone, ArrowRight, Landmark } from 'lucide-react';
+import { Mail, Lock, User, Phone, ArrowRight } from 'lucide-react';
 import { login, register, AuthUser } from '../../api';
+import { Lang, t } from '../../i18n';
 
 interface AuthScreenProps {
   onAuth: (user: AuthUser) => void;
+  lang: Lang;
 }
 
-export default function AuthScreen({ onAuth }: AuthScreenProps) {
+export default function AuthScreen({ onAuth, lang }: AuthScreenProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,38 +39,36 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-200">
-            <Landmark className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">KentGözü</h1>
-          <p className="text-sm text-slate-500 mt-1">Daha iyi bir şehir için</p>
+        <div className="text-center mb-10">
+          <img src="/ibb-logo.png" alt="İBB" className="w-20 h-20 mx-auto mb-4 rounded-2xl shadow-xl border-4 border-white" />
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{t('app.name', lang)}</h1>
+          <p className="text-sm text-slate-500 mt-1 font-medium">{t('app.slogan', lang)}</p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-slate-200/60 rounded-xl p-1 mb-6">
+        <div className="flex bg-slate-200/60 rounded-2xl p-1.5 mb-8">
           <button
             onClick={() => { setIsLogin(true); setError(''); }}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              isLogin ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
+            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+              isLogin ? 'bg-white text-blue-700 shadow-md shadow-slate-300/50' : 'text-slate-500'
             }`}
           >
-            Giriş Yap
+            {t('auth.login', lang)}
           </button>
           <button
             onClick={() => { setIsLogin(false); setError(''); }}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              !isLogin ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
+            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+              !isLogin ? 'bg-white text-blue-700 shadow-md shadow-slate-300/50' : 'text-slate-500'
             }`}
           >
-            Kayıt Ol
+            {t('auth.register', lang)}
           </button>
         </div>
 
@@ -84,36 +84,36 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
               >
                 <div className="flex gap-3">
                   <div className="flex-1 relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Ad"
+                      placeholder={t('auth.firstname', lang)}
                       required={!isLogin}
-                      className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+                      className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none shadow-sm"
                     />
                   </div>
                   <div className="flex-1 relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Soyad"
+                      placeholder={t('auth.lastname', lang)}
                       required={!isLogin}
-                      className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+                      className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none shadow-sm"
                     />
                   </div>
                 </div>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Telefon (opsiyonel)"
-                    className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+                    placeholder={t('auth.phone', lang)}
+                    className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none shadow-sm"
                   />
                 </div>
               </motion.div>
@@ -121,36 +121,37 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
           </AnimatePresence>
 
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="E-posta adresi"
+              placeholder={t('auth.email', lang)}
               required
-              className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+              className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none shadow-sm"
             />
           </div>
 
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Şifre (en az 8 karakter)"
+              placeholder={t('auth.password', lang)}
               required
               minLength={8}
-              className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
+              className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none shadow-sm"
             />
           </div>
 
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-xl"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-red-50 border border-red-100 text-red-600 text-xs font-semibold p-4 rounded-2xl flex items-center gap-2"
             >
+              <div className="w-1.5 h-1.5 bg-red-600 rounded-full" />
               {error}
             </motion.div>
           )}
@@ -158,13 +159,13 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white rounded-xl py-3.5 font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-blue-200 disabled:opacity-60"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-4 font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-blue-200 disabled:opacity-60"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
-                {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
+                {isLogin ? t('auth.login', lang) : t('auth.register', lang)}
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -172,5 +173,24 @@ export default function AuthScreen({ onAuth }: AuthScreenProps) {
         </form>
       </motion.div>
     </div>
+  );
+}
+
+function Loader2(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
   );
 }

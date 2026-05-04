@@ -32,5 +32,6 @@ public record CreateStaffRequest(
 
         Set<String> roleNames,
 
-        String departmentId
+        String departmentId,
+        String district
 ) {}

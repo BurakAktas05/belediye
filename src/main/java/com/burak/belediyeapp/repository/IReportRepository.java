@@ -59,7 +59,22 @@ public interface IReportRepository extends JpaRepository<Report, String> {
     );
 
     /**
+     * İlçeye göre raporları getirir.
+     */
+    Page<Report> findByDistrict(String district, Pageable pageable);
+
+    /**
+     * İlçe ve duruma göre raporları getirir.
+     */
+    Page<Report> findByDistrictAndReportStatus(String district, ReportStatus status, Pageable pageable);
+
+    /**
      * Kategori bazlı istatistik — yönetim dashboard'u için.
      */
     long countByReportStatus(ReportStatus status);
+
+    /**
+     * İlçe bazlı durum istatistiği.
+     */
+    long countByDistrictAndReportStatus(String district, ReportStatus status);
 }

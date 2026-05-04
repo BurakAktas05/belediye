@@ -36,3 +36,10 @@ build/
 .env
 .env.*
 !.env.example
+
+### Frontend ###
+node_modules/
+dist/
+.vercel/
+.output/
+*.log

@@ -39,6 +39,8 @@ public class ReportService {
     private final IReportHistoryRepository historyRepository;
     private final IReportMapper reportMapper;
     private final NotificationService notificationService;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+    private final com.burak.belediyeapp.service.ai.GeminiService geminiService;
 
     // ===================================================
     // VATANDAŞ: Rapor Oluşturma
@@ -46,6 +48,7 @@ public class ReportService {
 
     @Transactional
     @PreAuthorize("hasRole('ROLE_CITIZEN')")
+    @com.burak.belediyeapp.audit.AuditAction(action = "REPORT_CREATE", description = "Yeni bir vatandaş raporu oluşturuldu")
     public ReportResponse createReport(CreateReportRequest request, AppUser reporter) {
         ReportCategory category = categoryRepository.findById(request.categoryId())
                 .filter(ReportCategory::isActive)
@@ -54,8 +57,28 @@ public class ReportService {
         Report report = reportMapper.toEntity(request);
         report.setCategory(category);
         report.setReporter(reporter);
+        report.setDistrict(request.district());
 
         Report saved = reportRepository.save(report);
+
+        // Medya linklerini kaydet
+        if (request.mediaUrls() != null && !request.mediaUrls().isEmpty()) {
+            List<ReportMedia> mediaList = request.mediaUrls().stream()
+                    .map(url -> ReportMedia.builder()
+                            .imageUrl(url)
+                            .report(saved)
+                            .build())
+                    .toList();
+            saved.getMediaList().addAll(mediaList);
+            reportRepository.save(saved);
+        }
+
+        // Live Dashboard için WebSocket bildirimi gönder
+        messagingTemplate.convertAndSend("/topic/reports", reportMapper.toResponse(saved));
+
+        // AI Analizini başlat (Asenkron)
+        performAiAnalysis(saved.getId());
+
         log.info("Yeni rapor oluşturuldu: {} — Kullanıcı: {}", saved.getId(), reporter.getEmail());
 
         return reportMapper.toResponse(saved);
@@ -78,14 +101,22 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('ROLE_FIELD_OFFICER','ROLE_DEPT_MANAGER','ROLE_ADMIN','ROLE_SUPER_ADMIN')")
-    public Page<ReportListResponse> getAllReports(Pageable pageable) {
+    public Page<ReportListResponse> getAllReports(AppUser user, Pageable pageable) {
+        if (user.getDistrict() != null && !user.hasRole("ROLE_SUPER_ADMIN")) {
+            return reportRepository.findByDistrict(user.getDistrict(), pageable)
+                    .map(reportMapper::toListResponse);
+        }
         return reportRepository.findAll(pageable)
                 .map(reportMapper::toListResponse);
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('ROLE_FIELD_OFFICER','ROLE_DEPT_MANAGER','ROLE_ADMIN','ROLE_SUPER_ADMIN')")
-    public Page<ReportListResponse> getReportsByStatus(ReportStatus status, Pageable pageable) {
+    public Page<ReportListResponse> getReportsByStatus(ReportStatus status, AppUser user, Pageable pageable) {
+        if (user.getDistrict() != null && !user.hasRole("ROLE_SUPER_ADMIN")) {
+            return reportRepository.findByDistrictAndReportStatus(user.getDistrict(), status, pageable)
+                    .map(reportMapper::toListResponse);
+        }
         return reportRepository.findByReportStatus(status, pageable)
                 .map(reportMapper::toListResponse);
     }
@@ -113,8 +144,9 @@ public class ReportService {
     // ===================================================
 
     @Transactional
-    @PreAuthorize("hasAnyRole('ROLE_FIELD_OFFICER','ROLE_DEPT_MANAGER','ROLE_ADMIN','ROLE_SUPER_ADMIN')")
-    public ReportResponse updateStatus(String reportId, UpdateReportStatusRequest request, AppUser updatedBy) {
+    @PreAuthorize("hasAnyRole('ROLE_FIELD_OFFICER', 'ROLE_DEPT_MANAGER', 'ROLE_ADMIN', 'ROLE_SUPER_ADMIN')")
+    @com.burak.belediyeapp.audit.AuditAction(action = "REPORT_STATUS_UPDATE", description = "Rapor durumu güncellendi")
+    public ReportResponse updateReportStatus(String reportId, UpdateReportStatusRequest request, AppUser currentUser) {
         Report report = findReportOrThrow(reportId);
 
         // İş kuralı: RESOLVED ve REJECTED raporlar tekrar güncellenemez
@@ -207,6 +239,20 @@ public class ReportService {
     // ===================================================
     // Yardımcı Metodlar
     // ===================================================
+
+    @Async
+    @Transactional
+    public void performAiAnalysis(String reportId) {
+        Report report = findReportOrThrow(reportId);
+        com.burak.belediyeapp.service.ai.GeminiService.AIAnalysisResult result = geminiService.analyzeReport(report);
+        
+        if (result != null) {
+            report.setAiPriority(result.priority());
+            report.setAiSummary(result.summary());
+            reportRepository.save(report);
+            log.info("AI Analizi tamamlandı: Rapor={}, Öncelik={}", reportId, result.priority());
+        }
+    }
 
     private Report findReportOrThrow(String reportId) {
         return reportRepository.findById(reportId)

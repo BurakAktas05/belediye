@@ -22,6 +22,7 @@ public class CategoryService {
     private final IDepartmentRepository departmentRepository;
 
     @Transactional(readOnly = true)
+    @org.springframework.cache.annotation.Cacheable(value = "categories", key = "'active'")
     public List<CategoryResponse> getActiveCategories() {
         return categoryRepository.findAllByActiveTrue().stream()
                 .map(this::mapToResponse)
@@ -36,6 +37,7 @@ public class CategoryService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "categories", allEntries = true)
     public CategoryResponse createCategory(CreateCategoryRequest request) {
         if (categoryRepository.existsByName(request.name())) {
             throw new BusinessException("Bu kategori adı zaten mevcut: " + request.name(), "CATEGORY_ALREADY_EXISTS");
@@ -57,6 +59,7 @@ public class CategoryService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = "categories", allEntries = true)
     public void deleteCategory(String categoryId) {
         ReportCategory category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Kategori", "id", categoryId));

@@ -9,5 +9,6 @@ public record ReportListResponse(
         String categoryName,
         Double latitude,
         Double longitude,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String district
 ) {}

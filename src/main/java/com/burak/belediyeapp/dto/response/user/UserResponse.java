@@ -8,5 +8,6 @@ public record UserResponse(
         String lastName,
         String email,
         String phoneNumber,
-        List<String> roles
+        List<String> roles,
+        String district
 ) {}

@@ -21,7 +21,26 @@ public class DashboardService {
     private final IReportCategoryRepository categoryRepository;
 
     @Transactional(readOnly = true)
-    public DashboardStatsResponse getStats() {
+    public DashboardStatsResponse getStats(com.burak.belediyeapp.entity.AppUser user) {
+        String district = user.getDistrict();
+        boolean isSuperAdmin = user.hasRole("ROLE_SUPER_ADMIN");
+
+        if (district != null && !isSuperAdmin) {
+            return new DashboardStatsResponse(
+                    reportRepository.countByDistrictAndReportStatus(district, ReportStatus.PENDING) +
+                    reportRepository.countByDistrictAndReportStatus(district, ReportStatus.PROCESSING) +
+                    reportRepository.countByDistrictAndReportStatus(district, ReportStatus.RESOLVED) +
+                    reportRepository.countByDistrictAndReportStatus(district, ReportStatus.REJECTED),
+                    reportRepository.countByDistrictAndReportStatus(district, ReportStatus.PENDING),
+                    reportRepository.countByDistrictAndReportStatus(district, ReportStatus.PROCESSING),
+                    reportRepository.countByDistrictAndReportStatus(district, ReportStatus.RESOLVED),
+                    reportRepository.countByDistrictAndReportStatus(district, ReportStatus.REJECTED),
+                    userRepository.count(), // Bu kısım hala genel kalabilir veya ilçeye göre filtrelenebilir
+                    departmentRepository.count(),
+                    categoryRepository.count()
+            );
+        }
+
         return new DashboardStatsResponse(
                 reportRepository.count(),
                 reportRepository.countByReportStatus(ReportStatus.PENDING),

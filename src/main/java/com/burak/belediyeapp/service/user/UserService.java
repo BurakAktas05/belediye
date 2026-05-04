@@ -76,13 +76,15 @@ public class UserService {
                     .orElseThrow(() -> new ResourceNotFoundException("Sistem rolü bulunamadı"));
             user.setRoles(Set.of(citizenRole));
         }
-
         // Departman ata
         if (request.departmentId() != null && !request.departmentId().isBlank()) {
             Department dept = departmentRepository.findById(request.departmentId())
                     .orElseThrow(() -> new ResourceNotFoundException("Departman", "id", request.departmentId()));
             user.setDepartment(dept);
         }
+
+        // İlçe ata
+        user.setDistrict(request.district());
 
         AppUser saved = userRepository.save(user);
         log.info("Yeni personel oluşturuldu: {} ({})", saved.getFullName(), saved.getEmail());
@@ -124,6 +126,14 @@ public class UserService {
         return mapToResponse(saved);
     }
 
+    @Transactional
+    public void updateFcmToken(String userId, String token) {
+        AppUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı", "id", userId));
+        user.setFcmToken(token);
+        userRepository.save(user);
+    }
+
     private UserResponse mapToResponse(AppUser user) {
         return new UserResponse(
                 user.getId(),
@@ -131,7 +141,8 @@ public class UserService {
                 user.getLastName(),
                 user.getEmail(),
                 user.getPhoneNumber(),
-                user.getRoles().stream().map(Role::getName).collect(Collectors.toList())
+                user.getRoles().stream().map(Role::getName).collect(Collectors.toList()),
+                user.getDistrict()
         );
     }
 }

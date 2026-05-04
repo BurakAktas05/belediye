@@ -41,6 +41,7 @@ export interface AuthUser {
   roles: string[];
   accessToken: string;
   refreshToken: string;
+  district: string | null;
 }
 
 export interface ApiCategory {
@@ -177,10 +178,10 @@ export async function getCategories(): Promise<ApiCategory[]> {
 }
 
 // ── Reports ────────────────────────────────
-export async function createReport(title: string, description: string, categoryId: string, latitude: number, longitude: number) {
+export async function createReport(title: string, description: string, categoryId: string, latitude: number, longitude: number, district?: string) {
   return apiFetch<ApiReportDetail>('/reports', {
     method: 'POST',
-    body: JSON.stringify({ title, description, categoryId, latitude, longitude }),
+    body: JSON.stringify({ title, description, categoryId, latitude, longitude, district: district || null }),
   });
 }
 

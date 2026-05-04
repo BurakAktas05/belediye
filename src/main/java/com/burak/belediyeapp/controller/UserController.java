@@ -27,10 +27,19 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/me")
-    @Operation(summary = "Kendi profil bilgilerimi getir")
+    @Operation(summary = "Giriş yapmış kullanıcı bilgilerini getir")
     public ResponseEntity<ApiResponse<UserResponse>> getMyProfile(
             @AuthenticationPrincipal AppUser currentUser) {
         return ResponseEntity.ok(ApiResponse.success(userService.getUserProfile(currentUser)));
+    }
+
+    @PatchMapping("/fcm-token")
+    @Operation(summary = "FCM Token güncelle")
+    public ResponseEntity<ApiResponse<Void>> updateFcmToken(
+            @RequestParam String token,
+            @AuthenticationPrincipal AppUser currentUser) {
+        userService.updateFcmToken(currentUser.getId(), token);
+        return ResponseEntity.ok(ApiResponse.success("FCM Token güncellendi", null));
     }
 
     @GetMapping

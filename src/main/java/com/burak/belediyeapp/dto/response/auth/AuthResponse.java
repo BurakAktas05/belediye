@@ -9,12 +9,14 @@ public record AuthResponse(
         String userId,
         String email,
         String fullName,
-        Set<String> roles
+        Set<String> roles,
+        String district
 ) {
     public static AuthResponse of(String accessToken, String refreshToken,
                                    String userId, String email,
-                                   String fullName, Set<String> roles) {
+                                   String fullName, Set<String> roles,
+                                   String district) {
         return new AuthResponse(accessToken, refreshToken, "Bearer",
-                userId, email, fullName, roles);
+                userId, email, fullName, roles, district);
     }
 }

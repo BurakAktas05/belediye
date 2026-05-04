@@ -19,6 +19,8 @@ public record CreateReportRequest(
         Double latitude,
 
         @NotNull(message = "Boylam (Longitude) gereklidir")
-        Double longitude
+        Double longitude,
 
+        String district,
+        java.util.List<String> mediaUrls
 ) {}

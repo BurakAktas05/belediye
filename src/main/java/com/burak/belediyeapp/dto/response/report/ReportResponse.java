@@ -15,5 +15,6 @@ public record ReportResponse(
         Double longitude,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        List<String> mediaUrls
+        List<String> mediaUrls,
+        String district
 ) {}

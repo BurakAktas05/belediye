@@ -141,7 +141,8 @@ public class AuthService {
                 user.getId(),
                 user.getEmail(),
                 user.getFullName(),
-                roles
+                roles,
+                user.getDistrict()
         );
     }
 

@@ -46,6 +46,7 @@ public class NotificationService {
                 .build();
 
         notificationRepository.save(notification);
+        sendPushNotification(report.getReporter(), notification.getTitle(), notification.getBody());
         log.debug("Bildirim gönderildi: Kullanıcı={}, Rapor={}", report.getReporter().getEmail(), report.getId());
     }
 
@@ -64,6 +65,25 @@ public class NotificationService {
                 .build();
 
         notificationRepository.save(notification);
+        sendPushNotification(assignee, notification.getTitle(), notification.getBody());
+    }
+
+    private void sendPushNotification(AppUser user, String title, String body) {
+        if (user.getFcmToken() == null || user.getFcmToken().isBlank()) return;
+
+        try {
+            com.google.firebase.messaging.Message message = com.google.firebase.messaging.Message.builder()
+                    .setToken(user.getFcmToken())
+                    .setNotification(com.google.firebase.messaging.Notification.builder()
+                            .setTitle(title)
+                            .setBody(body)
+                            .build())
+                    .build();
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().sendAsync(message);
+            log.info("Push bildirimi gönderildi: {}", user.getEmail());
+        } catch (Exception e) {
+            log.warn("Push bildirimi gönderilemedi (Kullanıcı: {}): {}", user.getEmail(), e.getMessage());
+        }
     }
 
     /**

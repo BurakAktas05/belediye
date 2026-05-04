@@ -32,6 +32,19 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService reportService;
+    private final com.burak.belediyeapp.service.storage.StorageService storageService;
+
+    @PostMapping("/upload")
+    @Operation(summary = "Rapor için fotoğraf yükle")
+    public ResponseEntity<ApiResponse<List<String>>> uploadMedia(
+            @RequestParam("files") List<org.springframework.web.multipart.MultipartFile> files) {
+        
+        List<String> urls = files.stream()
+                .map(file -> storageService.uploadFile(file, "reports"))
+                .toList();
+        
+        return ResponseEntity.ok(ApiResponse.success("Dosyalar yüklendi", urls));
+    }
 
     @PostMapping
     @Operation(summary = "Yeni rapor oluştur (Vatandaş)")
@@ -59,11 +72,12 @@ public class ReportController {
     @Operation(summary = "Tüm raporlar (Saha Ekibi ve üzeri)")
     public ResponseEntity<ApiResponse<Page<ReportListResponse>>> getAllReports(
             @RequestParam(required = false) ReportStatus status,
+            @AuthenticationPrincipal AppUser currentUser,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
 
         Page<ReportListResponse> page = (status != null)
-                ? reportService.getReportsByStatus(status, pageable)
-                : reportService.getAllReports(pageable);
+                ? reportService.getReportsByStatus(status, currentUser, pageable)
+                : reportService.getAllReports(currentUser, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(page));
     }
@@ -85,7 +99,7 @@ public class ReportController {
             @Valid @RequestBody UpdateReportStatusRequest request,
             @AuthenticationPrincipal AppUser currentUser) {
 
-        ReportResponse response = reportService.updateStatus(reportId, request, currentUser);
+        ReportResponse response = reportService.updateReportStatus(reportId, request, currentUser);
         return ResponseEntity.ok(ApiResponse.success("Durum güncellendi", response));
     }
 
