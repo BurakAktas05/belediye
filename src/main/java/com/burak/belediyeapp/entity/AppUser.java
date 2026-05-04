@@ -5,30 +5,64 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+/**
+ * Sistemdeki tüm kullanıcıları temsil eder (vatandaş, saha ekibi, yönetici...).
+ * Spring Security'nin UserDetails arayüzünü implemente eder — böylece
+ * authentication için ayrı bir adapter sınıfına gerek kalmaz.
+ */
 @Entity
 @Table(name = "app_users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AppUser extends BaseEntity{
+public class AppUser extends BaseEntity implements UserDetails {
 
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false, unique = true, length = 150)
     private String email;
 
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 80)
     private String firstName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 80)
     private String lastName;
 
+    /**
+     * Telefon numarası: Belediye bildirimleri için kullanılabilir.
+     */
+    @Column(length = 20)
+    private String phoneNumber;
+
+    /**
+     * Hesap aktif mi? Pasif hesaplar giriş yapamaz.
+     */
+    @Column(nullable = false)
+    private boolean enabled = true;
+
+    /**
+     * Kullanıcının bağlı olduğu belediye birimi.
+     * Vatandaşlar için null olabilir.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
+
+    /**
+     * Kullanıcı rolleri. EAGER yüklenir çünkü her request'te
+     * yetki kontrolü için gereklidir.
+     */
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
@@ -36,4 +70,65 @@ public class AppUser extends BaseEntity{
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    // ===================================================
+    // UserDetails Interface Implementasyonu
+    // ===================================================
+
+    /**
+     * Rolleri ve alt yetkilerini Spring Security formatına dönüştürür.
+     * Hem "ROLE_ADMIN" hem "REPORT_ASSIGN" gibi değerler otomatik eklenir.
+     */
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        Set<GrantedAuthority> authorities = new HashSet<>();
+
+        for (Role role : roles) {
+            // Rolü ekle: "ROLE_ADMIN" formatında
+            authorities.add(new SimpleGrantedAuthority(role.getName()));
+
+            // Rolün tüm ince yetkilerini ekle
+            role.getPermissions().stream()
+                    .map(p -> new SimpleGrantedAuthority(p.getName()))
+                    .forEach(authorities::add);
+        }
+        return authorities;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    // ===================================================
+    // Yardımcı Metodlar
+    // ===================================================
+
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
+
+    public boolean hasRole(String roleName) {
+        return roles.stream().anyMatch(r -> r.getName().equals(roleName));
+    }
 }

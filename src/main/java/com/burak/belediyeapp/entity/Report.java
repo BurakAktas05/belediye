@@ -2,12 +2,18 @@ package com.burak.belediyeapp.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import org.locationtech.jts.geom.Point;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Vatandaşların oluşturduğu alan raporlarını temsil eder.
+ * (Çukur, çöp, park ihlali, vb.)
+ *
+ * Konum bilgisi JTS Point tipinde tutulur — PostGIS spatial sorguları
+ * (yakın raporlar, ısı haritası vb.) için.
+ */
 @Getter
 @Setter
 @Entity
@@ -15,14 +21,18 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Report extends BaseEntity{
+public class Report extends BaseEntity {
 
-    @Column(nullable = false,length = 150)
+    @Column(nullable = false, length = 150)
     private String title;
 
-    @Column(nullable = false,columnDefinition = "text")
+    @Column(nullable = false, columnDefinition = "text")
     private String description;
 
+    /**
+     * WGS84 (SRID 4326) koordinat sistemiyle GPS konumu.
+     * x = boylam (longitude), y = enlem (latitude)
+     */
     @Column(columnDefinition = "geometry(Point,4326)", nullable = false)
     private Point location;
 
@@ -31,22 +41,38 @@ public class Report extends BaseEntity{
     @Builder.Default
     private ReportStatus reportStatus = ReportStatus.PENDING;
 
+    /**
+     * Raporun kategorisi (Yol, Çevre, Park vb.)
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id",nullable = false)
+    @JoinColumn(name = "category_id", nullable = false)
     private ReportCategory category;
 
+    /**
+     * Raporu oluşturan vatandaş.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reporter_id", nullable = false)
     private AppUser reporter;
 
+    /**
+     * Sorumlu saha ekibi üyesi. Atanana kadar null.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
     private AppUser assignee;
 
+    /**
+     * Rapora ek fotoğraf/video URL'leri.
+     */
     @OneToMany(mappedBy = "report", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<ReportMedia> mediaList = new ArrayList<>();
 
+    /**
+     * Durum değişikliği geçmişi — auditability için.
+     */
     @OneToMany(mappedBy = "report", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<ReportHistory> historyList = new ArrayList<>();
-
 }

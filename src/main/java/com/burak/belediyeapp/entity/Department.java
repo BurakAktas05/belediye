@@ -1,0 +1,47 @@
+package com.burak.belediyeapp.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Belediye içindeki birimleri (Yol Bakım, Çevre, Park-Bahçe vb.) temsil eder.
+ * Her kategoriye ve rapora bir departman bağlanabilir, böylece doğru ekip
+ * otomatik olarak atanabilir (ilerleyen sürümde).
+ */
+@Entity
+@Table(name = "departments")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Department extends BaseEntity {
+
+    @Column(nullable = false, unique = true, length = 100)
+    private String name;
+
+    @Column(length = 255)
+    private String description;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean active = true;
+
+    /**
+     * Departmana ait kullanıcılar (field officer, department manager vb.)
+     * Tek yönlü ilişki: AppUser tarafında yönetilir.
+     */
+    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<AppUser> members = new ArrayList<>();
+
+    /**
+     * Bu departmanın ilgilendiği kategoriler.
+     */
+    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ReportCategory> categories = new ArrayList<>();
+}

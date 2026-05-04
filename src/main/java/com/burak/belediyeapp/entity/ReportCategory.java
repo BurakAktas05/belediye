@@ -3,17 +3,40 @@ package com.burak.belediyeapp.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * Raporlara kategorik departman atamasını mümkün kılar.
+ * Örn: "Yol Çukuru" kategorisi → "Yol Bakım Müdürlüğü" departmanına bağlı.
+ */
 @Entity
 @Table(name = "report_categories")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ReportCategory extends BaseEntity {
-    @Column(nullable = false, unique = true)
+
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
 
+    @Column(length = 255)
     private String description;
 
+    /**
+     * İkon/renk bilgisi — mobil uygulama UI'ı için.
+     */
+    @Column(length = 50)
+    private String iconCode;
+
     @Column(nullable = false)
-    private boolean active = true; // Kategori pasife çekilebilir
+    @Builder.Default
+    private boolean active = true;
+
+    /**
+     * Bu kategorideki raporları hangi departman alacak?
+     * Null ise manuel atama yapılması gerekir.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
 }

@@ -1,20 +1,19 @@
 package com.burak.belediyeapp.dto.response.report;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record ReportResponse(
-        Long id,
+        String id,
         String title,
         String description,
-
         String status,
-
         String categoryName,
-
         String reporterFullName,
-
+        String assigneeFullName,
         Double latitude,
         Double longitude,
-
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt,
+        List<String> mediaUrls
 ) {}

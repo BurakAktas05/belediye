@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Ortam Değişkenleri — ASLA COMMIT ETME ###
+.env
+.env.*
+!.env.example

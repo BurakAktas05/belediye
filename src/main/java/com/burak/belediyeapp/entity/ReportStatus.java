@@ -1,8 +1,34 @@
 package com.burak.belediyeapp.entity;
 
+/**
+ * Bir raporun yaşam döngüsündeki durumlar.
+ *
+ * Durum geçiş akışı:
+ *   PENDING → PROCESSING → RESOLVED
+ *   PENDING → REJECTED
+ *   PROCESSING → REJECTED (istisnai durum)
+ */
 public enum ReportStatus {
-    PROCESSING,
+
+    /**
+     * Vatandaş raporunu gönderdi, henüz incelenmedi.
+     * Başlangıç durumu.
+     */
     PENDING,
-    REJECTED,
+
+    /**
+     * Rapor incelendi, saha ekibine atandı, üzerinde çalışılıyor.
+     */
+    PROCESSING,
+
+    /**
+     * Sorun sahada giderildi, rapor kapatıldı.
+     */
     RESOLVED,
+
+    /**
+     * Rapor geçersiz, mükerrer veya yanlış kategoride.
+     * Reddedildi.
+     */
+    REJECTED
 }

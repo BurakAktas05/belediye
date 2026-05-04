@@ -12,8 +12,8 @@ public record CreateReportRequest(
         @NotBlank(message = "Açıklama boş bırakılamaz")
         String description,
 
-        @NotNull(message = "Kategori seçilmelidir")
-        Long categoryId,
+        @NotBlank(message = "Kategori seçilmelidir")
+        String categoryId,
 
         @NotNull(message = "Enlem (Latitude) gereklidir")
         Double latitude,

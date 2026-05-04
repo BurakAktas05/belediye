@@ -2,12 +2,18 @@ package com.burak.belediyeapp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
+/**
+ * İBB Vatandaş Şikayet ve Takip Platformu
+ *
+ * @EnableAsync: NotificationService'in async metodları için gerekli
+ */
 @SpringBootApplication
+@EnableAsync
 public class BelediyeappApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(BelediyeappApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(BelediyeappApplication.class, args);
+    }
 }
