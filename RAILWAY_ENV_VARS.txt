@@ -4,15 +4,16 @@
 
 # --- APP CONFIG ---
 SPRING_PROFILES_ACTIVE=prod
-JWT_SECRET=SizinGucluJwtSecretAnahtariniz123!
+JWT_SECRET=dGhpcyBpcyBhIHZlcnkgbG9uZyBzZWNyZXQga2V5Zm9yIElCQiBiZWxlZGl5ZWFwcA==
 ACCESS_TOKEN_EXPIRATION=900000
 
 # --- DATABASE (Railway PostgreSQL) ---
-# Bunları Railway PostgreSQL oluşturunca otomatik alacaktır, 
-# ama manuel girmek istersen:
-DB_URL=postgresql://postgres:sifre@host:port/belediyeapp
-DB_USERNAME=postgres
-DB_PASSWORD=sifre
+# DİKKAT: Railway'de Postgres eklediğinde aşağıdaki 3 satırı SİLİP 
+# yerine sadece DATABASE_URL (Railway otomatik verir) kullanabilirsin.
+# Veya manuel olarak:
+DB_URL=${{PostgreSQL.DATABASE_URL}}
+DB_USERNAME=${{PostgreSQL.PGUSER}}
+DB_PASSWORD=${{PostgreSQL.PGPASSWORD}}
 
 # --- AI (GEMINI) ---
 GEMINI_API_KEY=AIzaSyAo4QWlkZr0BMSAyJMmZvRfi6Cjvav7mtk
