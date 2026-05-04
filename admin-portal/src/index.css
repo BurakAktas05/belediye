@@ -1,9 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #004d99; /* IBB Blue */
+  --color-primary: #004d99;
+  --color-primary-hover: #003d7a;
+  --color-primary-100: #b3cce6;
   --color-secondary: #00b1ff;
-  --color-accent: #ffcc00; /* IBB Yellow */
+  --color-accent: #ffcc00;
 }
 
 @layer base {

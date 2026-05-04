@@ -20,7 +20,7 @@ const getNotifIcon = (type: string) => {
 
 const getNotifColor = (type: string, isDark: boolean) => {
   switch (type) {
-    case 'REPORT_STATUS_CHANGED': return isDark ? 'bg-blue-900/30 text-blue-400 border-blue-900/50' : 'bg-blue-50 text-blue-600 border-blue-100';
+    case 'REPORT_STATUS_CHANGED': return isDark ? 'border-primary/40 bg-primary/20 text-secondary' : 'border-primary/20 bg-primary/10 text-primary';
     case 'REPORT_ASSIGNED': return isDark ? 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50' : 'bg-emerald-50 text-emerald-600 border-emerald-100';
     default: return isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-50 text-slate-600 border-slate-100';
   }
@@ -70,7 +70,7 @@ export default function Notifications({ onBadgeUpdate, lang, isDark }: Notificat
         {unreadCount > 0 && (
           <button
             onClick={handleMarkAllRead}
-            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold text-primary transition-colors hover:text-primary-hover dark:text-secondary"
           >
             <CheckCheck className="w-4 h-4" />
             {t('notif.mark.all', lang)}
@@ -108,8 +108,8 @@ export default function Notifications({ onBadgeUpdate, lang, isDark }: Notificat
               transition={{ delay: idx * 0.05 }}
               className={`rounded-2xl p-4 border transition-all ${
                 isDark 
-                  ? notif.read ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-800 border-blue-900/50 shadow-lg shadow-blue-900/10'
-                  : notif.read ? 'bg-white border-slate-200' : 'bg-white border-blue-200 shadow-sm shadow-blue-100/50'
+                  ? notif.read ? 'bg-slate-800/40 border-slate-800' : 'border-primary/30 bg-slate-800 shadow-lg shadow-primary/10'
+                  : notif.read ? 'bg-white border-slate-200' : 'border-primary/25 bg-white shadow-sm shadow-primary/15'
               }`}
             >
               <div className="flex gap-3">
@@ -122,7 +122,7 @@ export default function Notifications({ onBadgeUpdate, lang, isDark }: Notificat
                       {notif.title}
                     </h4>
                     {!notif.read && (
-                      <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1.5" />
+                      <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
                     )}
                   </div>
                   <p className={`text-xs mt-1 leading-relaxed ${notif.read ? 'text-slate-400 dark:text-slate-500' : 'text-slate-600 dark:text-slate-300'}`}>

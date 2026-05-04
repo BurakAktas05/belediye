@@ -57,8 +57,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
 
                 // ── Herkese açık ──────────────────────────────
-                .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
+
+                // ── WebSocket bağlantı endpoint'i ─────────────
+                .requestMatchers("/ws-belediye/**").permitAll()
 
                 // ── Swagger UI (geliştirme) ───────────────────
                 .requestMatchers(
@@ -73,9 +77,16 @@ public class SecurityConfig {
 
                 // ── Vatandaş işlemleri ────────────────────────
                 .requestMatchers(HttpMethod.POST, "/api/v1/reports").hasRole("CITIZEN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/reports/upload").hasRole("CITIZEN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/reports/my").hasRole("CITIZEN")
 
-                // ── Rapor detay — tüm oturum açmış kullanıcılar (method security kontrol eder)
+                // ── Zaman çizelgesi — vatandaş (kendi raporu) + personel
+                .requestMatchers(HttpMethod.GET, "/api/v1/reports/*/timeline").authenticated()
+
+                // ── Saha görevlisi: bana atananlar
+                .requestMatchers(HttpMethod.GET, "/api/v1/reports/my-assignments").hasRole("FIELD_OFFICER")
+
+                // ── Rapor detay — tüm oturum açmış kullanıcılar (iş kuralı serviste)
                 .requestMatchers(HttpMethod.GET, "/api/v1/reports/{reportId}")
                     .authenticated()
 
@@ -94,8 +105,24 @@ public class SecurityConfig {
                 // ── Admin & üzeri ─────────────────────────────
                 .requestMatchers(HttpMethod.POST, "/api/v1/categories/**")
                     .hasAnyRole("ADMIN", "SUPER_ADMIN")
+
+                // ── Kullanıcı profili — tüm oturum açmış kullanıcılar ──
+                .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/users/me/change-password").authenticated()
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/users/fcm-token").authenticated()
+
+                // ── Kullanıcı yönetimi — yöneticiler ──────────
                 .requestMatchers("/api/v1/users/**")
                     .hasAnyRole("DEPT_MANAGER", "ADMIN", "SUPER_ADMIN")
+
+                // ── Export — yöneticiler ───────────────────────
+                .requestMatchers("/api/v1/export/**")
+                    .hasAnyRole("DEPT_MANAGER", "ADMIN", "SUPER_ADMIN")
+
+                // ── Denetim günlüğü — yalnızca admin ─────────
+                .requestMatchers("/api/v1/audit-logs/**")
+                    .hasAnyRole("ADMIN", "SUPER_ADMIN")
 
                 // Geri kalan her şey kimlik doğrulama gerektirir
                 .anyRequest().authenticated()

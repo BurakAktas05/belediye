@@ -57,7 +57,7 @@ export default function AuthScreen({ onAuth, lang }: AuthScreenProps) {
           <button
             onClick={() => { setIsLogin(true); setError(''); }}
             className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-              isLogin ? 'bg-white text-blue-700 shadow-md shadow-slate-300/50' : 'text-slate-500'
+              isLogin ? 'bg-white text-primary shadow-md shadow-slate-300/50' : 'text-slate-500'
             }`}
           >
             {t('auth.login', lang)}
@@ -65,7 +65,7 @@ export default function AuthScreen({ onAuth, lang }: AuthScreenProps) {
           <button
             onClick={() => { setIsLogin(false); setError(''); }}
             className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-              !isLogin ? 'bg-white text-blue-700 shadow-md shadow-slate-300/50' : 'text-slate-500'
+              !isLogin ? 'bg-white text-primary shadow-md shadow-slate-300/50' : 'text-slate-500'
             }`}
           >
             {t('auth.register', lang)}
@@ -91,7 +91,7 @@ export default function AuthScreen({ onAuth, lang }: AuthScreenProps) {
                       onChange={(e) => setFirstName(e.target.value)}
                       placeholder={t('auth.firstname', lang)}
                       required={!isLogin}
-                      className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none shadow-sm"
+                      className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none shadow-sm"
                     />
                   </div>
                   <div className="flex-1 relative">
@@ -102,7 +102,7 @@ export default function AuthScreen({ onAuth, lang }: AuthScreenProps) {
                       onChange={(e) => setLastName(e.target.value)}
                       placeholder={t('auth.lastname', lang)}
                       required={!isLogin}
-                      className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none shadow-sm"
+                      className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none shadow-sm"
                     />
                   </div>
                 </div>
@@ -113,7 +113,7 @@ export default function AuthScreen({ onAuth, lang }: AuthScreenProps) {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder={t('auth.phone', lang)}
-                    className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none shadow-sm"
+                    className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none shadow-sm"
                   />
                 </div>
               </motion.div>
@@ -128,7 +128,7 @@ export default function AuthScreen({ onAuth, lang }: AuthScreenProps) {
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t('auth.email', lang)}
               required
-              className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none shadow-sm"
+              className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none shadow-sm"
             />
           </div>
 
@@ -141,7 +141,7 @@ export default function AuthScreen({ onAuth, lang }: AuthScreenProps) {
               placeholder={t('auth.password', lang)}
               required
               minLength={8}
-              className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none shadow-sm"
+              className="w-full bg-white border border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none shadow-sm"
             />
           </div>
 
@@ -159,7 +159,7 @@ export default function AuthScreen({ onAuth, lang }: AuthScreenProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-4 font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-blue-200 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-60"
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />

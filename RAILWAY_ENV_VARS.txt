@@ -17,6 +17,10 @@ DB_PASSWORD=sifre
 # --- AI (GEMINI) ---
 GEMINI_API_KEY=AIzaSyAo4QWlkZr0BMSAyJMmZvRfi6Cjvav7mtk
 
+# --- Medya doğrulama (Python media-guard servisi URL — boşsa atlanır) ---
+MEDIA_GUARD_URL=
+MEDIA_GUARD_FAIL_OPEN=true
+
 # --- STORAGE (Cloudflare R2) ---
 S3_ENDPOINT=https://c79c2cbf13bdc91c91c294deb7349cd3.r2.cloudflarestorage.com
 S3_ACCESS_KEY=3c94beb46bac357a56311753e9c2cf3a

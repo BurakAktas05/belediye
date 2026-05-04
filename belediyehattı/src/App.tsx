@@ -8,11 +8,13 @@ import NewReport from './components/screens/NewReport';
 import Profile from './components/screens/Profile';
 import Notifications from './components/screens/Notifications';
 import Settings from './components/screens/Settings';
+import ReportDetailScreen from './components/screens/ReportDetailScreen';
 
 export type Tab = 'home' | 'report' | 'profile' | 'notifications' | 'settings';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [openReportId, setOpenReportId] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(getSavedUser());
   const [unreadCount, setUnreadCount] = useState(0);
   const [key, setKey] = useState(0);
@@ -65,6 +67,7 @@ export default function App() {
   const handleReportSubmit = () => {
     setKey(k => k + 1);
     setActiveTab('home');
+    setOpenReportId(null);
   };
 
   if (!user) {
@@ -105,7 +108,26 @@ export default function App() {
 
         {/* Content */}
         <main className={`flex-1 overflow-y-auto overflow-x-hidden relative pb-20 ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
-          {activeTab === 'home' && <Home key={key} onNavigate={setActiveTab} lang={lang} isDark={isDark} />}
+          {activeTab === 'home' && (
+            <Home
+              key={key}
+              onNavigate={setActiveTab}
+              onOpenReport={(id) => setOpenReportId(id)}
+              lang={lang}
+              isDark={isDark}
+            />
+          )}
+          {openReportId && (
+            <ReportDetailScreen
+              reportId={openReportId}
+              lang={lang}
+              isDark={isDark}
+              onClose={() => {
+                setOpenReportId(null);
+                setKey((k) => k + 1);
+              }}
+            />
+          )}
           {activeTab === 'report' && <NewReport onSubmit={handleReportSubmit} onCancel={() => setActiveTab('home')} lang={lang} isDark={isDark} />}
           {activeTab === 'profile' && <Profile onLogout={handleLogout} onSettings={() => setActiveTab('settings')} lang={lang} isDark={isDark} />}
           {activeTab === 'notifications' && <Notifications onBadgeUpdate={setUnreadCount} lang={lang} isDark={isDark} />}
@@ -113,25 +135,25 @@ export default function App() {
         </main>
 
         {/* Bottom Nav */}
-        {activeTab !== 'settings' && (
+        {activeTab !== 'settings' && !openReportId && (
           <nav className={`absolute bottom-0 w-full border-t flex justify-around items-center pb-safe pt-2 px-2 shadow-lg z-20 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <button 
               onClick={() => setActiveTab('home')}
-              className={`flex flex-col items-center p-3 w-20 transition-colors ${activeTab === 'home' ? 'text-blue-600' : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex flex-col items-center p-3 w-20 transition-colors ${activeTab === 'home' ? 'text-primary' : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <HomeIcon className="w-6 h-6 mb-1" strokeWidth={activeTab === 'home' ? 2.5 : 2} />
               <span className="text-[10px] font-medium">{t('tab.feed', lang)}</span>
             </button>
             
             <button onClick={() => setActiveTab('report')} className="flex flex-col items-center justify-center -mt-8 mb-2">
-              <div className={`p-4 rounded-full shadow-lg shadow-blue-200 dark:shadow-blue-900/30 transition-transform active:scale-95 ${activeTab === 'report' ? 'bg-blue-700' : 'bg-blue-600'}`}>
+              <div className={`p-4 rounded-full shadow-lg shadow-primary/25 transition-transform active:scale-95 ${activeTab === 'report' ? 'bg-primary-hover' : 'bg-primary'}`}>
                 <PlusCircle className="w-8 h-8 text-white" strokeWidth={2} />
               </div>
             </button>
             
             <button 
               onClick={() => setActiveTab('profile')}
-              className={`flex flex-col items-center p-3 w-20 transition-colors ${activeTab === 'profile' ? 'text-blue-600' : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex flex-col items-center p-3 w-20 transition-colors ${activeTab === 'profile' ? 'text-primary' : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <User className="w-6 h-6 mb-1" strokeWidth={activeTab === 'profile' ? 2.5 : 2} />
               <span className="text-[10px] font-medium">{t('tab.profile', lang)}</span>

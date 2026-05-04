@@ -85,6 +85,9 @@ public class Report extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String aiSummary;
 
+    @Column(length = 200)
+    private String aiSuggestedCategory;
+
     /**
      * Durum değişikliği geçmişi — auditability için.
      */

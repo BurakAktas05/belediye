@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.burak</groupId>
 	<artifactId>belediyeapp</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>3.0.0-SNAPSHOT</version>
 	<name>BelediyeApp</name>
 	<description>İBB Vatandaş Şikayet ve Takip Platformu</description>
 	<properties>
@@ -194,22 +194,22 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
 					<annotationProcessorPaths>
-						<!-- 1. MapStruct önce çalışmalı -->
-						<path>
-							<groupId>org.mapstruct</groupId>
-							<artifactId>mapstruct-processor</artifactId>
-							<version>${mapstruct.version}</version>
-						</path>
-						<!-- 2. Lombok -->
+						<!-- 1. Lombok önce çalışmalı (getter/setter üretir) -->
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
 						</path>
-						<!-- 3. Çatışmayı önleyen köprü -->
+						<!-- 2. Çatışmayı önleyen köprü -->
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok-mapstruct-binding</artifactId>
 							<version>0.2.0</version>
+						</path>
+						<!-- 3. MapStruct (Lombok ürettiği getter/setter'ları kullanır) -->
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>${mapstruct.version}</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>

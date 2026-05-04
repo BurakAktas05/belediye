@@ -6,6 +6,7 @@ import { Lang, t } from '../../i18n';
 
 interface HomeProps {
   onNavigate: (tab: 'report') => void;
+  onOpenReport?: (reportId: string) => void;
   lang: Lang;
   isDark: boolean;
 }
@@ -24,7 +25,7 @@ const getStatusBadge = (status: string, lang: Lang) => {
     case 'RESOLVED':
       return <span className="px-2.5 py-1 text-[10px] font-medium tracking-wide uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-full">{label}</span>;
     case 'PROCESSING':
-      return <span className="px-2.5 py-1 text-[10px] font-medium tracking-wide uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">{label}</span>;
+      return <span className="rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-primary dark:bg-primary/25 dark:text-secondary">{label}</span>;
     case 'REJECTED':
       return <span className="px-2.5 py-1 text-[10px] font-medium tracking-wide uppercase bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full">{label}</span>;
     default:
@@ -32,7 +33,7 @@ const getStatusBadge = (status: string, lang: Lang) => {
   }
 };
 
-export default function Home({ onNavigate, lang, isDark }: HomeProps) {
+export default function Home({ onNavigate, onOpenReport, lang, isDark }: HomeProps) {
   const [reports, setReports] = useState<ApiReportList[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,13 +59,13 @@ export default function Home({ onNavigate, lang, isDark }: HomeProps) {
       className="p-4 space-y-6"
     >
       {/* Hero Banner */}
-      <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl p-5 text-white shadow-xl shadow-blue-200 dark:shadow-blue-900/20 relative overflow-hidden">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-secondary p-5 text-white shadow-xl shadow-primary/20">
         <div className="relative z-10">
           <h2 className="text-xl font-bold mb-1">{t('home.hero.title', lang)}</h2>
-          <p className="text-blue-100 text-sm mb-4">{t('home.hero.desc', lang)}</p>
+          <p className="mb-4 text-sm text-white/85">{t('home.hero.desc', lang)}</p>
           <button 
             onClick={() => onNavigate('report')}
-            className="bg-white text-blue-700 px-4 py-2 rounded-xl text-sm font-semibold active:scale-95 transition-transform"
+            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-slate-900 shadow-md active:scale-95 transition-transform"
           >
             {t('home.hero.btn', lang)}
           </button>
@@ -111,7 +112,16 @@ export default function Home({ onNavigate, lang, isDark }: HomeProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.07 }}
-                className={`rounded-2xl p-4 shadow-sm border flex flex-col gap-3 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
+                role={onOpenReport ? 'button' : undefined}
+                tabIndex={onOpenReport ? 0 : undefined}
+                onClick={() => onOpenReport?.(report.id)}
+                onKeyDown={(ev) => {
+                  if (onOpenReport && (ev.key === 'Enter' || ev.key === ' ')) {
+                    ev.preventDefault();
+                    onOpenReport(report.id);
+                  }
+                }}
+                className={`rounded-2xl p-4 shadow-sm border flex flex-col gap-3 ${onOpenReport ? 'cursor-pointer active:scale-[0.99]' : ''} ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex gap-3">
@@ -136,7 +146,7 @@ export default function Home({ onNavigate, lang, isDark }: HomeProps) {
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
                     <MapPin className="w-3.5 h-3.5" />
-                    <span>{report.latitude?.toFixed(4)}, {report.longitude?.toFixed(4)}</span>
+                    <span>{report.district || `${report.latitude?.toFixed(4)}, ${report.longitude?.toFixed(4)}`}</span>
                   </div>
                 </div>
               </motion.div>

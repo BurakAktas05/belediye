@@ -5,6 +5,7 @@ import com.burak.belediyeapp.dto.request.report.CreateReportRequest;
 import com.burak.belediyeapp.dto.request.report.UpdateReportStatusRequest;
 import com.burak.belediyeapp.dto.response.report.ReportListResponse;
 import com.burak.belediyeapp.dto.response.report.ReportResponse;
+import com.burak.belediyeapp.dto.response.report.ReportTimelineEntryResponse;
 import com.burak.belediyeapp.entity.*;
 import com.burak.belediyeapp.exception.BusinessException;
 import com.burak.belediyeapp.exception.ResourceNotFoundException;
@@ -13,17 +14,18 @@ import com.burak.belediyeapp.repository.IAppUserRepository;
 import com.burak.belediyeapp.repository.IReportCategoryRepository;
 import com.burak.belediyeapp.repository.IReportHistoryRepository;
 import com.burak.belediyeapp.repository.IReportRepository;
+import com.burak.belediyeapp.service.geo.DistrictResolutionService;
 import com.burak.belediyeapp.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Rapor iş mantığı servisi.
@@ -42,6 +44,7 @@ public class ReportService {
     private final NotificationService notificationService;
     private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
     private final com.burak.belediyeapp.service.ai.GeminiService geminiService;
+    private final DistrictResolutionService districtResolutionService;
 
     // ===================================================
     // VATANDAŞ: Rapor Oluşturma
@@ -58,11 +61,22 @@ public class ReportService {
         Report report = reportMapper.toEntity(request);
         report.setCategory(category);
         report.setReporter(reporter);
-        report.setDistrict(request.district());
+
+        Optional<String> spatialDistrict = districtResolutionService.resolveDistrict(
+                request.latitude(), request.longitude());
+        String fromClient = request.district();
+        String district = spatialDistrict.orElse(null);
+        if (district != null) {
+            if (fromClient != null && !fromClient.isBlank() && !fromClient.equalsIgnoreCase(district)) {
+                log.info("İlçe PostGIS tespiti istemciden farklı: client={}, server={}", fromClient, district);
+            }
+        } else {
+            district = (fromClient != null && !fromClient.isBlank()) ? fromClient : "Belirlenemedi";
+        }
+        report.setDistrict(district);
 
         Report saved = reportRepository.save(report);
 
-        // Medya linklerini kaydet
         if (request.mediaUrls() != null && !request.mediaUrls().isEmpty()) {
             List<ReportMedia> mediaList = request.mediaUrls().stream()
                     .map(url -> ReportMedia.builder()
@@ -74,15 +88,21 @@ public class ReportService {
             reportRepository.save(saved);
         }
 
-        // Live Dashboard için WebSocket bildirimi gönder
+        historyRepository.save(ReportHistory.builder()
+                .report(saved)
+                .oldStatus(null)
+                .newStatus(ReportStatus.PENDING)
+                .changedBy(reporter)
+                .note("İhbar oluşturuldu · ilçe: " + district)
+                .build());
+
         messagingTemplate.convertAndSend("/topic/reports", reportMapper.toResponse(saved));
 
-        // AI Analizini başlat (Asenkron)
         performAiAnalysis(saved.getId());
 
-        log.info("Yeni rapor oluşturuldu: {} — Kullanıcı: {}", saved.getId(), reporter.getEmail());
+        log.info("Yeni rapor oluşturuldu: {} — {} — ilçe={}", saved.getId(), reporter.getEmail(), district);
 
-        return reportMapper.toResponse(saved);
+        return reportMapper.toResponse(findReportOrThrow(saved.getId()));
     }
 
     // ===================================================
@@ -140,6 +160,29 @@ public class ReportService {
         return reportMapper.toResponse(report);
     }
 
+    @Transactional(readOnly = true)
+    public List<ReportTimelineEntryResponse> getReportTimeline(String reportId, AppUser currentUser) {
+        Report report = findReportOrThrow(reportId);
+        ensureCanViewReport(report, currentUser);
+        return historyRepository.findTimelineByReportId(reportId).stream()
+                .map(h -> new ReportTimelineEntryResponse(
+                        h.getCreatedAt(),
+                        h.getOldStatus() != null ? h.getOldStatus().name() : null,
+                        h.getNewStatus() != null ? h.getNewStatus().name() : null,
+                        h.getChangedBy() != null
+                                ? h.getChangedBy().getFirstName() + " " + h.getChangedBy().getLastName()
+                                : "Sistem",
+                        h.getNote()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ROLE_FIELD_OFFICER')")
+    public Page<ReportListResponse> getMyAssignments(AppUser user, Pageable pageable) {
+        return reportRepository.findByAssigneeId(user.getId(), pageable)
+                .map(reportMapper::toListResponse);
+    }
+
     // ===================================================
     // SAHA EKİBİ / YÖNETİM: Durum Güncelleme
     // ===================================================
@@ -166,7 +209,7 @@ public class ReportService {
                 .report(report)
                 .oldStatus(oldStatus)
                 .newStatus(request.status())
-                .changedBy(updatedBy)
+                .changedBy(currentUser)
                 .note(request.note())
                 .build();
         historyRepository.save(history);
@@ -241,17 +284,19 @@ public class ReportService {
     // Yardımcı Metodlar
     // ===================================================
 
-    @Async
     @Transactional
     public void performAiAnalysis(String reportId) {
         Report report = findReportOrThrow(reportId);
         com.burak.belediyeapp.service.ai.GeminiService.AIAnalysisResult result = geminiService.analyzeReport(report);
-        
+
         if (result != null) {
             report.setAiPriority(result.priority());
             report.setAiSummary(result.summary());
+            if (result.suggestedCategoryName() != null && !result.suggestedCategoryName().isBlank()) {
+                report.setAiSuggestedCategory(result.suggestedCategoryName());
+            }
             reportRepository.save(report);
-            log.info("AI Analizi tamamlandı: Rapor={}, Öncelik={}", reportId, result.priority());
+            log.info("AI analizi tamamlandı: rapor={}, öncelik={}", reportId, result.priority());
         }
     }
 

@@ -15,7 +15,7 @@ const getStatusInfo = (status: string, lang: Lang) => {
   const label = t(`status.${status}`, lang);
   switch (status) {
     case 'RESOLVED': return { icon: <CheckCircle2 className="w-4 h-4" />, color: 'text-emerald-600 dark:text-emerald-400', label };
-    case 'PROCESSING': return { icon: <Loader2 className="w-4 h-4" />, color: 'text-blue-600 dark:text-blue-400', label };
+    case 'PROCESSING': return { icon: <Loader2 className="w-4 h-4" />, color: 'text-primary dark:text-secondary', label };
     case 'REJECTED': return { icon: <XCircle className="w-4 h-4" />, color: 'text-red-600 dark:text-red-400', label };
     default: return { icon: <Clock className="w-4 h-4" />, color: 'text-amber-600 dark:text-amber-400', label };
   }
@@ -63,7 +63,7 @@ export default function Profile({ onLogout, onSettings, lang, isDark }: ProfileP
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -122,18 +122,18 @@ export default function Profile({ onLogout, onSettings, lang, isDark }: ProfileP
       {/* Level Callout */}
       <div className="px-5 mt-6">
         <div className={`rounded-2xl p-4 border flex items-center justify-between ${
-          isDark ? 'bg-blue-900/10 border-blue-900/30' : 'bg-amber-100/50 border-amber-200'
+          isDark ? 'border-primary/30 bg-primary/10' : 'bg-amber-100/50 border-amber-200'
         }`}>
           <div>
-            <h4 className={`font-bold text-sm ${isDark ? 'text-blue-400' : 'text-amber-900'}`}>
+            <h4 className={`text-sm font-bold ${isDark ? 'text-secondary' : 'text-amber-900'}`}>
               {points < 1000 ? t('profile.level.hero', lang) : t('profile.level.hero.done', lang)}
             </h4>
-            <p className={`text-xs mt-1 ${isDark ? 'text-blue-500/70' : 'text-amber-700'}`}>
+            <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-amber-700'}`}>
               {points < 1000 ? t('profile.level.more', lang, { n: 1000 - points }) : t('profile.level.max', lang)}
             </p>
           </div>
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDark ? 'bg-blue-900/30' : 'bg-amber-200'}`}>
-            <Award className={`w-6 h-6 ${isDark ? 'text-blue-400' : 'text-amber-600'}`} />
+          <div className={`flex h-12 w-12 items-center justify-center rounded-full ${isDark ? 'bg-primary/25' : 'bg-amber-200'}`}>
+            <Award className={`h-6 w-6 ${isDark ? 'text-secondary' : 'text-amber-600'}`} />
           </div>
         </div>
       </div>
@@ -149,7 +149,7 @@ export default function Profile({ onLogout, onSettings, lang, isDark }: ProfileP
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-xl ${isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+            <div className={`rounded-xl p-2 ${isDark ? 'bg-primary/25 text-secondary' : 'bg-primary/10 text-primary'}`}>
               <List className="w-5 h-5" />
             </div>
             <span className={`font-semibold text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('profile.history', lang)}</span>

@@ -35,7 +35,7 @@ export default function Settings({ lang, theme, onLangChange, onThemeChange, onB
         {/* Language */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Globe className="w-4 h-4 text-blue-600" />
+            <Globe className="w-4 h-4 text-primary" />
             <h3 className="font-semibold text-sm text-slate-700 dark:text-slate-200">{t('settings.language', lang)}</h3>
           </div>
           <div className="space-y-2">
@@ -45,14 +45,14 @@ export default function Settings({ lang, theme, onLangChange, onThemeChange, onB
                 onClick={() => onLangChange(l.code)}
                 className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-all ${
                   lang === l.code
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-500'
+                    ? 'border-primary bg-primary/10 dark:border-secondary dark:bg-primary/20'
                     : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{l.code === 'tr' ? '🇹🇷' : l.code === 'en' ? '🇬🇧' : '🇸🇦'}</span>
                   <div className="text-left">
-                    <span className={`text-sm font-semibold ${lang === l.code ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                    <span className={`text-sm font-semibold ${lang === l.code ? 'text-primary dark:text-secondary' : 'text-slate-700 dark:text-slate-200'}`}>
                       {l.nativeName}
                     </span>
                     {l.code !== lang && (
@@ -61,7 +61,7 @@ export default function Settings({ lang, theme, onLangChange, onThemeChange, onB
                   </div>
                 </div>
                 {lang === l.code && (
-                  <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
                     <Check className="w-4 h-4 text-white" />
                   </div>
                 )}
@@ -73,7 +73,7 @@ export default function Settings({ lang, theme, onLangChange, onThemeChange, onB
         {/* Theme */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Moon className="w-4 h-4 text-blue-600" />
+            <Moon className="w-4 h-4 text-primary" />
             <h3 className="font-semibold text-sm text-slate-700 dark:text-slate-200">{t('settings.theme', lang)}</h3>
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -83,12 +83,12 @@ export default function Settings({ lang, theme, onLangChange, onThemeChange, onB
                 onClick={() => onThemeChange(opt.value)}
                 className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
                   theme === opt.value
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-500'
+                    ? 'border-primary bg-primary/10 dark:border-secondary dark:bg-primary/20'
                     : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300'
                 }`}
               >
-                <span className={theme === opt.value ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}>{opt.icon}</span>
-                <span className={`text-xs font-semibold ${theme === opt.value ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-300'}`}>
+                <span className={theme === opt.value ? 'text-primary dark:text-secondary' : 'text-slate-500 dark:text-slate-400'}>{opt.icon}</span>
+                <span className={`text-xs font-semibold ${theme === opt.value ? 'text-primary dark:text-secondary' : 'text-slate-600 dark:text-slate-300'}`}>
                   {opt.label}
                 </span>
               </button>
@@ -99,12 +99,12 @@ export default function Settings({ lang, theme, onLangChange, onThemeChange, onB
         {/* Notifications */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Bell className="w-4 h-4 text-blue-600" />
+            <Bell className="w-4 h-4 text-primary" />
             <h3 className="font-semibold text-sm text-slate-700 dark:text-slate-200">{t('settings.notifications', lang)}</h3>
           </div>
           <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('settings.notifications.push', lang)}</span>
-            <div className="w-10 h-6 bg-blue-600 rounded-full relative cursor-pointer">
+            <div className="w-10 h-6 bg-primary rounded-full relative cursor-pointer">
               <div className="absolute right-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-sm" />
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function Settings({ lang, theme, onLangChange, onThemeChange, onB
         {/* About */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Info className="w-4 h-4 text-blue-600" />
+            <Info className="w-4 h-4 text-primary" />
             <h3 className="font-semibold text-sm text-slate-700 dark:text-slate-200">{t('settings.about', lang)}</h3>
           </div>
           <div className="space-y-2">

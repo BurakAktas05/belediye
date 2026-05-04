@@ -52,6 +52,24 @@ public class StorageService {
         }
     }
 
+    public String uploadBytes(byte[] data, String contentType, String folder, String originalFilename) {
+        String safeName = originalFilename != null ? originalFilename.replaceAll("[^a-zA-Z0-9._-]", "_") : "upload.bin";
+        String fileName = folder + "/" + java.util.UUID.randomUUID() + "_" + safeName;
+        try {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(fileName)
+                    .contentType(contentType != null ? contentType : "application/octet-stream")
+                    .build();
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(data));
+            log.info("Dosya yüklendi (bytes): {}", fileName);
+            return publicUrl + "/" + fileName;
+        } catch (Exception e) {
+            log.error("Dosya yükleme hatası: {}", fileName, e);
+            throw new RuntimeException("Dosya yüklenemedi", e);
+        }
+    }
+
     public void deleteFile(String fileUrl) {
         try {
             String key = fileUrl.replace(publicUrl + "/", "");

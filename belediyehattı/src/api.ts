@@ -59,6 +59,7 @@ export interface ApiReportList {
   latitude: number;
   longitude: number;
   createdAt: string;
+  district?: string | null;
 }
 
 export interface ApiReportDetail {
@@ -74,6 +75,18 @@ export interface ApiReportDetail {
   createdAt: string;
   updatedAt: string;
   mediaUrls: string[];
+  district?: string | null;
+  aiPriority?: string | null;
+  aiSummary?: string | null;
+  aiSuggestedCategory?: string | null;
+}
+
+export interface ReportTimelineEntry {
+  at: string;
+  oldStatus: string | null;
+  newStatus: string | null;
+  actorName: string;
+  note: string | null;
 }
 
 export interface ApiNotification {
@@ -191,6 +204,10 @@ export async function getMyReports(page = 0, size = 20): Promise<{ content: ApiR
 
 export async function getReportDetail(id: string): Promise<ApiReportDetail> {
   return apiFetch(`/reports/${id}`);
+}
+
+export async function getReportTimeline(id: string): Promise<ReportTimelineEntry[]> {
+  return apiFetch(`/reports/${id}/timeline`);
 }
 
 // ── Notifications ──────────────────────────

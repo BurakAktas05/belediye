@@ -1,9 +1,8 @@
 import axios from 'axios';
-
-const API_BASE = 'http://localhost:8080/api/v1';
+import { getApiBase } from './lib/env';
 
 const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: getApiBase(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,6 +16,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
 
 export interface Stats {
@@ -26,19 +36,51 @@ export interface Stats {
   resolvedReports: number;
   rejectedReports: number;
   totalUsers: number;
+  totalDepartments: number;
+  totalCategories: number;
 }
 
 export interface Report {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   status: 'PENDING' | 'PROCESSING' | 'RESOLVED' | 'REJECTED';
   categoryName: string;
-  reporterFullName: string;
-  assigneeFullName: string;
+  reporterFullName?: string;
+  assigneeFullName?: string | null;
   district: string;
   createdAt: string;
   latitude: number;
   longitude: number;
-  mediaUrls: string[];
+  mediaUrls?: string[];
+  aiPriority?: string | null;
+  aiSummary?: string | null;
+  aiSuggestedCategory?: string | null;
+}
+
+export interface ReportTimelineEntry {
+  at: string;
+  oldStatus: string | null;
+  newStatus: string | null;
+  actorName: string;
+  note: string | null;
+}
+
+export interface ReportListItem {
+  id: string;
+  title: string;
+  status: string;
+  categoryName: string;
+  latitude: number | null;
+  longitude: number | null;
+  createdAt: string;
+  district: string;
+}
+
+export interface SpringPage<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
 }

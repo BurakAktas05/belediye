@@ -61,4 +61,31 @@ public class AuthController {
         authService.logout(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success("Çıkış yapıldı", null));
     }
+
+    @GetMapping("/me")
+    @Operation(summary = "Mevcut oturum sahibi kullanıcı bilgilerini getir")
+    public ResponseEntity<ApiResponse<AuthMeResponse>> getCurrentUser(
+            @AuthenticationPrincipal AppUser currentUser) {
+
+        var roles = currentUser.getRoles().stream()
+                .map(r -> r.getName())
+                .collect(java.util.stream.Collectors.toSet());
+
+        AuthMeResponse response = new AuthMeResponse(
+                currentUser.getId(),
+                currentUser.getEmail(),
+                currentUser.getFullName(),
+                roles,
+                currentUser.getDistrict()
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    public record AuthMeResponse(
+            String userId,
+            String email,
+            String fullName,
+            java.util.Set<String> roles,
+            String district
+    ) {}
 }

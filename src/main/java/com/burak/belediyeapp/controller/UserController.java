@@ -1,6 +1,8 @@
 package com.burak.belediyeapp.controller;
 
+import com.burak.belediyeapp.dto.request.user.ChangePasswordRequest;
 import com.burak.belediyeapp.dto.request.user.CreateStaffRequest;
+import com.burak.belediyeapp.dto.request.user.UpdateProfileRequest;
 import com.burak.belediyeapp.dto.request.user.UpdateUserRolesRequest;
 import com.burak.belediyeapp.dto.response.common.ApiResponse;
 import com.burak.belediyeapp.dto.response.user.UserResponse;
@@ -26,11 +28,33 @@ public class UserController {
 
     private final UserService userService;
 
+    // =====================================================
+    //  Kendi Profili — tüm oturum açmış kullanıcılar
+    // =====================================================
+
     @GetMapping("/me")
     @Operation(summary = "Giriş yapmış kullanıcı bilgilerini getir")
     public ResponseEntity<ApiResponse<UserResponse>> getMyProfile(
             @AuthenticationPrincipal AppUser currentUser) {
         return ResponseEntity.ok(ApiResponse.success(userService.getUserProfile(currentUser)));
+    }
+
+    @PatchMapping("/me")
+    @Operation(summary = "Kendi profilini güncelle (ad, soyad, telefon)")
+    public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(
+            @AuthenticationPrincipal AppUser currentUser,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        UserResponse response = userService.updateProfile(currentUser.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Profil güncellendi", response));
+    }
+
+    @PostMapping("/me/change-password")
+    @Operation(summary = "Kendi şifresini değiştir")
+    public ResponseEntity<ApiResponse<Void>> changeMyPassword(
+            @AuthenticationPrincipal AppUser currentUser,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(currentUser.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Şifre başarıyla değiştirildi", null));
     }
 
     @PatchMapping("/fcm-token")
@@ -41,6 +65,10 @@ public class UserController {
         userService.updateFcmToken(currentUser.getId(), token);
         return ResponseEntity.ok(ApiResponse.success("FCM Token güncellendi", null));
     }
+
+    // =====================================================
+    //  Yönetici İşlemleri — Admin & üzeri
+    // =====================================================
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_SUPER_ADMIN','ROLE_DEPT_MANAGER')")
@@ -78,3 +106,4 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Kullanıcı durumu güncellendi", response));
     }
 }
+

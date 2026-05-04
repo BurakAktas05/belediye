@@ -16,5 +16,8 @@ public record ReportResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         List<String> mediaUrls,
-        String district
+        String district,
+        String aiPriority,
+        String aiSummary,
+        String aiSuggestedCategory
 ) {}

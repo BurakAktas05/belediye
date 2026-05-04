@@ -40,6 +40,16 @@ public class DepartmentController {
                 .body(ApiResponse.success("Departman oluşturuldu", response));
     }
 
+    @PatchMapping("/{departmentId}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
+    @Operation(summary = "Departman güncelle (Admin)")
+    public ResponseEntity<ApiResponse<DepartmentResponse>> updateDepartment(
+            @PathVariable String departmentId,
+            @Valid @RequestBody com.burak.belediyeapp.dto.request.department.UpdateDepartmentRequest request) {
+        DepartmentResponse response = departmentService.updateDepartment(departmentId, request);
+        return ResponseEntity.ok(ApiResponse.success("Departman güncellendi", response));
+    }
+
     @DeleteMapping("/{departmentId}")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
     @Operation(summary = "Departman sil (soft delete) (Admin)")

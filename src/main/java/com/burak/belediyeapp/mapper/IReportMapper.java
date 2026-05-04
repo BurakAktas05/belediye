@@ -4,6 +4,7 @@ import com.burak.belediyeapp.dto.request.report.CreateReportRequest;
 import com.burak.belediyeapp.dto.response.report.ReportListResponse;
 import com.burak.belediyeapp.dto.response.report.ReportResponse;
 import com.burak.belediyeapp.entity.Report;
+import com.burak.belediyeapp.entity.ReportMedia;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -11,6 +12,9 @@ import org.locationtech.jts.geom.PrecisionModel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+
+import java.util.Collections;
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface IReportMapper {
@@ -20,12 +24,13 @@ public interface IReportMapper {
     // ==========================================
     @Mapping(target = "categoryName", source = "category.name")
     @Mapping(target = "reporterFullName",
-            expression = "java(report.getReporter() != null ? report.getReporter().getFirstName() + ' ' + report.getReporter().getLastName() : null)")
+            expression = "java(report.getReporter() != null ? report.getReporter().getFirstName() + \" \" + report.getReporter().getLastName() : null)")
     @Mapping(target = "assigneeFullName",
-            expression = "java(report.getAssignee() != null ? report.getAssignee().getFirstName() + ' ' + report.getAssignee().getLastName() : null)")
+            expression = "java(report.getAssignee() != null ? report.getAssignee().getFirstName() + \" \" + report.getAssignee().getLastName() : null)")
     @Mapping(target = "latitude", source = "location.y")
     @Mapping(target = "longitude", source = "location.x")
     @Mapping(target = "status", source = "reportStatus")
+    @Mapping(target = "mediaUrls", source = "mediaList", qualifiedByName = "mediaListToUrls")
     ReportResponse toResponse(Report report);
 
     // ==========================================
@@ -40,12 +45,19 @@ public interface IReportMapper {
     // ==========================================
     // 3. CreateReportRequest → Entity
     // ==========================================
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "reportStatus", ignore = true)
     @Mapping(target = "reporter", ignore = true)
     @Mapping(target = "assignee", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "mediaList", ignore = true)
     @Mapping(target = "historyList", ignore = true)
+    @Mapping(target = "fcmToken", ignore = true)
+    @Mapping(target = "aiPriority", ignore = true)
+    @Mapping(target = "aiSummary", ignore = true)
+    @Mapping(target = "aiSuggestedCategory", ignore = true)
     @Mapping(target = "location", source = "request", qualifiedByName = "coordinatesToPoint")
     Report toEntity(CreateReportRequest request);
 
@@ -61,5 +73,18 @@ public interface IReportMapper {
         // DİKKAT: Coordinate(x=boylam, y=enlem) sıralaması
         GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
         return geometryFactory.createPoint(new Coordinate(request.longitude(), request.latitude()));
+    }
+
+    // ==========================================
+    // 5. Custom: ReportMedia listesi → URL listesi
+    // ==========================================
+    @Named("mediaListToUrls")
+    default List<String> mapMediaListToUrls(List<ReportMedia> mediaList) {
+        if (mediaList == null || mediaList.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return mediaList.stream()
+                .map(ReportMedia::getImageUrl)
+                .toList();
     }
 }

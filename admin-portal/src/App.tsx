@@ -1,25 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  Settings, 
-  LogOut, 
-  Bell, 
-  Search, 
-  Menu, 
-  X,
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  LogOut,
+  Bell,
+  Search,
+  Menu,
   Building2,
   PieChart,
   Download,
   CheckCircle2,
   Clock,
   AlertCircle,
-  ChevronRight
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from './api';
+import api, { type Stats } from './api';
+import LiveMap from './LiveMap';
+import ReportsPage from './pages/ReportsPage';
+import ReportDetailPage from './pages/ReportDetailPage';
+import StatisticsPage from './pages/StatisticsPage';
+import DepartmentsPage from './pages/DepartmentsPage';
+import PlaceholderPage from './pages/PlaceholderPage';
 
 // --- Types ---
 interface User {
@@ -49,17 +54,21 @@ const Sidebar = ({ isOpen, setOpen, user }: { isOpen: boolean, setOpen: (o: bool
           </div>
           <div>
             <h1 className="font-bold text-xl tracking-tight">KentGözü</h1>
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Belediye Yönetim</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-secondary">v3 · Belediye yönetim</p>
           </div>
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-1">
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive =
+              item.path === '/'
+                ? location.pathname === '/'
+                : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
             return (
               <Link
                 key={item.name}
                 to={item.path}
+                onClick={() => setOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                   isActive 
                     ? 'bg-primary text-white shadow-lg shadow-primary/20' 
@@ -96,98 +105,134 @@ const Sidebar = ({ isOpen, setOpen, user }: { isOpen: boolean, setOpen: (o: bool
   );
 };
 
-const Header = ({ setSidebarOpen }: { setSidebarOpen: (o: boolean) => void }) => {
+const Header = ({
+  setSidebarOpen,
+  darkMode,
+  onToggleDark,
+}: {
+  setSidebarOpen: (o: boolean) => void;
+  darkMode: boolean;
+  onToggleDark: () => void;
+}) => {
   return (
-    <header className="h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 px-6 flex items-center justify-between">
-      <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 hover:bg-slate-100 rounded-lg">
+    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 bg-white/80 px-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
+      <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-lg p-2 hover:bg-slate-100 lg:hidden dark:hover:bg-slate-800">
         <Menu />
       </button>
 
-      <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 w-96">
+      <div className="hidden w-96 items-center rounded-full bg-slate-100 px-4 py-2 dark:bg-slate-800 md:flex">
         <Search size={18} className="text-slate-400" />
-        <input 
-          type="text" 
-          placeholder="Rapor ara, personel bul..." 
-          className="bg-transparent border-none focus:ring-0 px-3 text-sm w-full"
+        <input
+          type="search"
+          placeholder="Rapor ara… (v3)"
+          className="w-full border-none bg-transparent px-3 text-sm focus:ring-0 dark:text-slate-100"
         />
       </div>
 
-      <div className="flex items-center gap-4">
-        <button className="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
+      <div className="flex items-center gap-2 sm:gap-4">
+        <button
+          type="button"
+          onClick={onToggleDark}
+          className="rounded-full p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800"
+          title={darkMode ? 'Açık tema' : 'Koyu tema'}
+        >
+          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+        <button type="button" className="relative rounded-full p-2 hover:bg-slate-100 dark:hover:bg-slate-800">
           <Bell size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" />
         </button>
-        <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 mx-2"></div>
-        <button className="flex items-center gap-2 p-1 pr-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-          <div className="w-8 h-8 bg-primary rounded-full"></div>
-          <span className="text-sm font-medium hidden sm:inline">Yönetici Paneli</span>
-        </button>
+        <div className="mx-1 hidden h-8 w-px bg-slate-200 sm:block dark:bg-slate-800" />
+        <div className="flex items-center gap-2 rounded-full p-1 pr-3 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <div className="h-8 w-8 shrink-0 rounded-full bg-primary" />
+          <span className="hidden text-sm font-medium sm:inline">Yönetici</span>
+        </div>
       </div>
     </header>
   );
 };
 
-import LiveMap from './LiveMap';
+const DashboardSkeleton = () => (
+  <div className="space-y-8 p-6">
+    <div className="h-10 w-64 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-700" />
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="h-36 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-800" />
+      ))}
+    </div>
+    <div className="h-[420px] animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-800" />
+  </div>
+);
 
 const Dashboard = () => {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get('/dashboard/stats').then(res => setStats(res.data.data));
+    api
+      .get('/dashboard/stats')
+      .then((res) => setStats(res.data.data))
+      .catch(() => setStatsError('İstatistikler alınamadı.'));
   }, []);
 
-  if (!stats) return null;
+  if (statsError) {
+    return (
+      <div className="p-6">
+        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{statsError}</p>
+      </div>
+    );
+  }
+
+  if (!stats) return <DashboardSkeleton />;
 
   const statCards = [
-    { name: 'Toplam Rapor', value: stats.totalReports, color: 'bg-blue-500', icon: FileText },
+    { name: 'Toplam Rapor', value: stats.totalReports, color: 'bg-primary', icon: FileText },
     { name: 'Bekleyen', value: stats.pendingReports, color: 'bg-amber-500', icon: Clock },
-    { name: 'İşleniyor', value: stats.processingReports, color: 'bg-indigo-500', icon: AlertCircle },
+    { name: 'İşleniyor', value: stats.processingReports, color: 'bg-secondary', icon: AlertCircle },
     { name: 'Çözülen', value: stats.resolvedReports, color: 'bg-emerald-500', icon: CheckCircle2 },
+    { name: 'Reddedilen', value: stats.rejectedReports, color: 'bg-red-500', icon: AlertCircle },
   ];
 
   return (
-    <div className="p-6 space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 p-6">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Hoş Geldiniz 👋</h2>
-          <p className="text-slate-500">Belediye yönetim sistemindeki güncel durum özetiniz.</p>
+          <h2 className="text-3xl font-bold tracking-tight">Hoş geldiniz</h2>
+          <p className="text-slate-500 dark:text-slate-400">KentGözü v3 — özet ve canlı harita.</p>
         </div>
-        <button className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl font-medium shadow-sm hover:bg-slate-50 transition-colors">
+        <button
+          type="button"
+          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 font-medium shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+        >
           <Download size={18} />
-          Dışa Aktar (.xlsx)
+          Dışa aktar
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {statCards.map((stat, i) => (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+            transition={{ delay: i * 0.06 }}
             key={stat.name}
-            className="p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none transition-all duration-300 group"
+            className="group rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900"
           >
-            <div className={`${stat.color} w-12 h-12 rounded-2xl flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform`}>
+            <div className={`${stat.color} mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-white transition-transform group-hover:scale-105`}>
               <stat.icon size={24} />
             </div>
-            <p className="text-slate-500 font-medium">{stat.name}</p>
-            <p className="text-3xl font-bold mt-1">{stat.value}</p>
-            <div className="mt-4 flex items-center text-xs font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg w-fit">
-              +12% Geçen haftadan
-            </div>
+            <p className="font-medium text-slate-500 dark:text-slate-400">{stat.name}</p>
+            <p className="mt-1 text-3xl font-bold">{stat.value}</p>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold">Canlı Takip Haritası</h3>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                <span className="text-xs font-bold text-slate-500 uppercase">Canlı Bağlantı Aktif</span>
-              </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-8 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-xl font-bold">Canlı harita</h3>
+              <span className="text-xs font-bold uppercase text-slate-500">Isı + işaretçi · REST ön yükleme</span>
             </div>
             <LiveMap />
           </div>
@@ -218,12 +263,14 @@ const App = () => {
   const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('kentgozu_theme') === 'dark');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       api.get('/auth/me').then(res => {
-        setUser(res.data.data);
+        const d = res.data.data;
+        setUser({ fullName: d.fullName, email: d.email, roles: d.roles ? [...d.roles] : [], district: d.district });
       }).catch(() => {
         localStorage.clear();
       }).finally(() => setLoading(false));
@@ -232,7 +279,18 @@ const App = () => {
     }
   }, []);
 
-  if (loading) return <div className="h-screen flex items-center justify-center">Yükleniyor...</div>;
+  useEffect(() => {
+    const root = document.documentElement;
+    if (darkMode) {
+      root.classList.add('dark');
+      localStorage.setItem('kentgozu_theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('kentgozu_theme', 'light');
+    }
+  }, [darkMode]);
+
+  if (loading) return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-600 dark:bg-slate-950 dark:text-slate-300">Yükleniyor…</div>;
 
   return (
     <Router>
@@ -241,15 +299,28 @@ const App = () => {
         
         <Route path="/*" element={
           !user ? <Navigate to="/login" /> : (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex">
+            <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
               <Sidebar isOpen={sidebarOpen} setOpen={setSidebarOpen} user={user} />
               
-              <div className="flex-1 lg:ml-72 flex flex-col">
-                <Header setSidebarOpen={setSidebarOpen} />
+              <div className="flex flex-1 flex-col lg:ml-72">
+                <Header
+                  setSidebarOpen={setSidebarOpen}
+                  darkMode={darkMode}
+                  onToggleDark={() => setDarkMode((d) => !d)}
+                />
                 <main className="flex-1 overflow-x-hidden">
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
-                    <Route path="/reports" element={<div className="p-6">Rapor Listesi Gelecek...</div>} />
+                    <Route path="/reports" element={<ReportsPage />} />
+                    <Route path="/reports/:id" element={<ReportDetailPage />} />
+                    <Route path="/stats" element={<StatisticsPage />} />
+                    <Route
+                      path="/staff"
+                      element={
+                        <PlaceholderPage title="Personeller" description="Personel yönetimi ve roller v3 yol haritasında." />
+                      }
+                    />
+                    <Route path="/departments" element={<DepartmentsPage />} />
                     <Route path="*" element={<Navigate to="/" />} />
                   </Routes>
                 </main>

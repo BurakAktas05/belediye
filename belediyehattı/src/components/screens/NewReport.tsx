@@ -130,7 +130,7 @@ Saygılarımla,
       {/* Progress */}
       <div className={`${isDark ? 'bg-slate-800' : 'bg-slate-100'} h-1 w-full`}>
         <div 
-          className="bg-blue-600 h-full transition-all duration-300 ease-out"
+          className="bg-primary h-full transition-all duration-300 ease-out"
           style={{ width: `${(step / 3) * 100}%` }}
         />
       </div>
@@ -151,17 +151,17 @@ Saygılarımla,
                     onClick={() => setSelectedCategory(cat)}
                     className={`p-4 rounded-2xl border-2 text-left transition-all shadow-sm ${
                       isSelected 
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' 
+                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
                         : isDark ? 'border-slate-800 bg-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${
-                      isSelected ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/40' : isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'
+                      isSelected ? 'bg-primary text-white shadow-lg shadow-primary/20 dark:shadow-primary/40' : isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'
                     }`}>
                       <Icon className="w-5 h-5" />
                     </div>
                     <span className={`font-semibold text-sm block ${
-                      isSelected ? 'text-blue-900 dark:text-blue-300' : isDark ? 'text-slate-200' : 'text-slate-700'
+                      isSelected ? 'text-primary dark:text-secondary' : isDark ? 'text-slate-200' : 'text-slate-700'
                     }`}>{cat.name}</span>
                   </button>
                 );
@@ -174,7 +174,7 @@ Saygılarımla,
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
             <div>
               <label className={`block text-sm font-semibold mb-2 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                <FileText className="w-4 h-4 text-blue-600" /> {t('report.title', lang)}
+                <FileText className="w-4 h-4 text-primary" /> {t('report.title', lang)}
               </label>
               <input 
                 type="text" 
@@ -182,14 +182,14 @@ Saygılarımla,
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t('report.title.placeholder', lang)}
                 className={`w-full border rounded-xl px-4 py-3 text-sm outline-none transition-all ${
-                  isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-blue-600'
+                  isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-primary' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-primary'
                 }`}
               />
             </div>
 
             <div>
               <label className={`block text-sm font-semibold mb-2 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                <MapPin className="w-4 h-4 text-blue-600" /> {t('report.location', lang)}
+                <MapPin className="w-4 h-4 text-primary" /> {t('report.location', lang)}
               </label>
               <div className="flex gap-2">
                 <input 
@@ -204,14 +204,14 @@ Saygılarımla,
                 <button 
                   onClick={handleGetLocation}
                   disabled={locating}
-                  className="bg-blue-600 text-white px-4 rounded-xl flex items-center gap-2 text-sm font-medium active:scale-95 transition-all disabled:opacity-60"
+                  className="bg-primary text-white px-4 rounded-xl flex items-center gap-2 text-sm font-medium active:scale-95 transition-all disabled:opacity-60"
                 >
                   <Navigation className={`w-4 h-4 ${locating ? 'animate-spin' : ''}`} />
                 </button>
               </div>
               
               {district && (
-                <div className={`mt-2 flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg ${isDark ? 'bg-blue-900/20 text-blue-400' : 'bg-blue-50 text-blue-700'}`}>
+                <div className={`mt-2 flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg ${isDark ? 'bg-primary/20 text-secondary' : 'bg-primary/10 text-primary'}`}>
                   <Building2 className="w-3.5 h-3.5" />
                   {t('report.district', lang)}: {district.name} ({t('report.district.auto', lang)})
                 </div>
@@ -220,10 +220,10 @@ Saygılarımla,
 
             <div>
               <label className={`block text-sm font-semibold mb-2 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                <Camera className="w-4 h-4 text-blue-600" /> {t('report.photo', lang)}
+                <Camera className="w-4 h-4 text-primary" /> {t('report.photo', lang)}
               </label>
               <button className={`w-full aspect-[21/9] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-colors ${
-                isDark ? 'bg-slate-800 border-slate-700 text-slate-500 hover:text-blue-400 hover:border-blue-500' : 'bg-slate-50 border-slate-300 text-slate-400 hover:text-blue-600 hover:border-blue-600'
+                isDark ? 'bg-slate-800 border-slate-700 text-slate-500 hover:text-secondary hover:border-primary' : 'bg-slate-50 border-slate-300 text-slate-400 hover:text-primary hover:border-primary'
               }`}>
                 <Camera className="w-8 h-8 mb-2" />
                 <span className="text-sm font-medium">{t('report.photo.btn', lang)}</span>
@@ -232,7 +232,7 @@ Saygılarımla,
 
             <div>
               <label className={`block text-sm font-semibold mb-2 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                <FileText className="w-4 h-4 text-blue-600" /> {t('report.description', lang)}
+                <FileText className="w-4 h-4 text-primary" /> {t('report.description', lang)}
               </label>
               <textarea 
                 value={description}
@@ -240,7 +240,7 @@ Saygılarımla,
                 rows={4}
                 placeholder={t('report.description.placeholder', lang)}
                 className={`w-full border rounded-xl px-4 py-3 text-sm outline-none transition-all resize-none ${
-                  isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-blue-600'
+                  isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-primary' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-primary'
                 }`}
               />
             </div>
@@ -278,7 +278,7 @@ Saygılarımla,
           <button 
             onClick={handleNext}
             disabled={step === 1 ? !selectedCategory : (!title || !description || latitude === null)}
-            className="w-full bg-blue-600 text-white rounded-xl py-3.5 font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 shadow-md shadow-blue-200 dark:shadow-none"
+            className="w-full bg-primary text-white rounded-xl py-3.5 font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 shadow-md shadow-primary/20 dark:shadow-none"
           >
             {t('report.next', lang)} <ArrowRight className="w-4 h-4" />
           </button>
@@ -286,7 +286,7 @@ Saygılarımla,
           <button 
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="w-full bg-blue-600 text-white rounded-xl py-3.5 font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-blue-200 dark:shadow-none"
+            className="w-full bg-primary text-white rounded-xl py-3.5 font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 shadow-md shadow-primary/20 dark:shadow-none"
           >
             {isSubmitting ? (
               <span className="flex items-center gap-2">

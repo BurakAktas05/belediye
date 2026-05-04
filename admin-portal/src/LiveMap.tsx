@@ -1,72 +1,226 @@
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import 'leaflet.heat';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
-import { Report } from './api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AlertCircle, Flame, MapPin, Layers } from 'lucide-react';
+import api, { type Report, type ReportListItem } from './api';
+import { getSockJsUrl } from './lib/env';
 
-// Fix leaflet icon issue
-// @ts-ignore
-delete L.Icon.Default.prototype._getIconUrl;
+// Leaflet default icon paths (bundler)
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+type LeafletWithHeat = typeof L & {
+  heatLayer(points: [number, number, number][], options?: Record<string, unknown>): L.Layer;
+};
+
 const RecenterMap = ({ coords }: { coords: [number, number] }) => {
   const map = useMap();
   useEffect(() => {
     map.setView(coords, 13);
-  }, [coords]);
+  }, [coords, map]);
   return null;
+};
+
+function listItemToReport(row: ReportListItem): Report {
+  return {
+    id: row.id,
+    title: row.title,
+    status: row.status as Report['status'],
+    categoryName: row.categoryName,
+    district: row.district ?? '',
+    createdAt: row.createdAt,
+    latitude: row.latitude ?? 0,
+    longitude: row.longitude ?? 0,
+  };
+}
+
+function HeatLayer({ points }: { points: [number, number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (points.length === 0) return;
+    const LH = L as LeafletWithHeat;
+    const layer = LH.heatLayer(points, {
+      radius: 28,
+      blur: 22,
+      maxZoom: 16,
+      max: 0.85,
+      gradient: { 0.4: '#00b1ff', 0.65: '#004d99', 0.9: '#ffcc00', 1: '#dc2626' },
+    });
+    map.addLayer(layer);
+    return () => {
+      map.removeLayer(layer);
+    };
+  }, [map, points]);
+  return null;
+}
+
+export type MapLayerMode = 'markers' | 'heat' | 'both';
+
+const statusBadge = (status: string) => {
+  switch (status) {
+    case 'PENDING':
+      return 'bg-amber-100 text-amber-800';
+    case 'PROCESSING':
+      return 'bg-indigo-100 text-indigo-800';
+    case 'RESOLVED':
+      return 'bg-emerald-100 text-emerald-800';
+    case 'REJECTED':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-slate-100 text-slate-700';
+  }
 };
 
 const LiveMap = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [newReport, setNewReport] = useState<Report | null>(null);
+  const [layerMode, setLayerMode] = useState<MapLayerMode>('both');
+  const [wsConnected, setWsConnected] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const mergeReport = useCallback((incoming: Report) => {
+    setReports((prev) => {
+      const without = prev.filter((r) => r.id !== incoming.id);
+      const next = [incoming, ...without];
+      return next.slice(0, 500);
+    });
+  }, []);
 
   useEffect(() => {
-    const socket = new SockJS('http://localhost:8080/ws-belediye');
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get('/reports', { params: { page: 0, size: 500, sort: 'createdAt,desc' } });
+        const rows = (res.data.data?.content ?? []) as ReportListItem[];
+        if (cancelled) return;
+        const mapped = rows
+          .map(listItemToReport)
+          .filter((r) => Number.isFinite(r.latitude) && Number.isFinite(r.longitude) && r.latitude !== 0 && r.longitude !== 0);
+        setReports(mapped);
+      } catch {
+        if (!cancelled) setLoadError('Harita verisi yüklenemedi (yetki veya ağ).');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const socket = new SockJS(getSockJsUrl());
     const stompClient = Stomp.over(socket);
     stompClient.debug = () => {};
 
-    stompClient.connect({}, () => {
-      stompClient.subscribe('/topic/reports', (msg) => {
-        const report = JSON.parse(msg.body);
-        setReports(prev => [report, ...prev].slice(0, 50));
-        setNewReport(report);
-        setTimeout(() => setNewReport(null), 5000);
-      });
-    });
+    stompClient.connect(
+      {},
+      () => {
+        setWsConnected(true);
+        stompClient.subscribe('/topic/reports', (msg) => {
+          const report = JSON.parse(msg.body) as Report;
+          if (Number.isFinite(report.latitude) && Number.isFinite(report.longitude)) {
+            mergeReport(report);
+            setNewReport(report);
+            setTimeout(() => setNewReport(null), 5000);
+          }
+        });
+      },
+      () => setWsConnected(false)
+    );
 
-    return () => stompClient.disconnect(() => {});
-  }, []);
+    return () => {
+      try {
+        stompClient.disconnect(() => {});
+      } catch {
+        /* ignore */
+      }
+      setWsConnected(false);
+    };
+  }, [mergeReport]);
+
+  const heatPoints = useMemo(() => {
+    const weight: Record<string, number> = {
+      PENDING: 0.9,
+      PROCESSING: 0.65,
+      RESOLVED: 0.35,
+      REJECTED: 0.5,
+    };
+    return reports
+      .filter((r) => r.latitude && r.longitude)
+      .map((r) => [r.latitude, r.longitude, weight[r.status] ?? 0.5] as [number, number, number]);
+  }, [reports]);
+
+  const showMarkers = layerMode === 'markers' || layerMode === 'both';
+  const showHeat = layerMode === 'heat' || layerMode === 'both';
 
   return (
     <div className="relative h-[600px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800">
+      <div className="absolute top-3 left-3 z-[500] flex flex-wrap gap-2">
+        {(
+          [
+            { id: 'markers' as const, label: 'İşaretçi', icon: MapPin },
+            { id: 'heat' as const, label: 'Isı', icon: Flame },
+            { id: 'both' as const, label: 'İkisi', icon: Layers },
+          ] as const
+        ).map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setLayerMode(id)}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold shadow-md backdrop-blur-md transition-colors ${
+              layerMode === id
+                ? 'bg-primary text-white'
+                : 'bg-white/90 text-slate-700 dark:bg-slate-900/90 dark:text-slate-200'
+            }`}
+          >
+            <Icon size={14} />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="absolute top-3 right-3 z-[500] flex items-center gap-2 rounded-xl bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-600 shadow-md backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-300">
+        <span className={`h-2 w-2 rounded-full ${wsConnected ? 'animate-pulse bg-emerald-500' : 'bg-amber-500'}`} />
+        {wsConnected ? 'Canlı' : 'WS kapalı'}
+      </div>
+
+      {loadError && (
+        <div className="absolute bottom-3 left-3 right-3 z-[500] rounded-xl bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-900 dark:bg-amber-950/80 dark:text-amber-100">
+          {loadError}
+        </div>
+      )}
+
       <MapContainer center={[41.0082, 28.9784]} zoom={11} className="h-full w-full">
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{s}/{x}/{y}.png"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          subdomains={['a', 'b', 'c']}
         />
-        {reports.map((report) => (
-          <Marker key={report.id} position={[report.latitude, report.longitude]}>
-            <Popup>
-              <div className="p-2">
-                <h4 className="font-bold text-primary">{report.title}</h4>
-                <p className="text-xs text-slate-500 mb-2">{report.categoryName} • {report.district}</p>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                  report.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
-                }`}>
-                  {report.status}
-                </span>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {showHeat && heatPoints.length > 0 && <HeatLayer points={heatPoints} />}
+        {showMarkers &&
+          reports.map((report) => (
+            <Marker key={report.id} position={[report.latitude, report.longitude]}>
+              <Popup>
+                <div className="p-2">
+                  <h4 className="font-bold text-primary">{report.title}</h4>
+                  <p className="mb-2 text-xs text-slate-500">
+                    {report.categoryName} • {report.district}
+                  </p>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusBadge(report.status)}`}>
+                    {report.status}
+                  </span>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
         {newReport && <RecenterMap coords={[newReport.latitude, newReport.longitude]} />}
       </MapContainer>
 
@@ -76,15 +230,15 @@ const LiveMap = () => {
             initial={{ x: 300, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 300, opacity: 0 }}
-            className="absolute top-6 right-6 z-[1000] w-72 p-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border-l-4 border-primary"
+            className="absolute top-14 right-3 z-[1000] w-72 rounded-2xl border-l-4 border-primary bg-white/90 p-4 shadow-2xl backdrop-blur-md dark:bg-slate-900/95"
           >
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <AlertCircle size={20} />
               </div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-primary uppercase">Yeni İhbar!</p>
-                <p className="text-sm font-bold text-slate-900 truncate">{newReport.title}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold uppercase text-primary">Yeni ihbar (v3)</p>
+                <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{newReport.title}</p>
                 <p className="text-xs text-slate-500">{newReport.district}</p>
               </div>
             </div>
@@ -96,5 +250,3 @@ const LiveMap = () => {
 };
 
 export default LiveMap;
-
-import { AlertCircle } from 'lucide-react';

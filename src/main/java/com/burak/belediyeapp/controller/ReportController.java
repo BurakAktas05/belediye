@@ -6,9 +6,13 @@ import com.burak.belediyeapp.dto.request.report.UpdateReportStatusRequest;
 import com.burak.belediyeapp.dto.response.common.ApiResponse;
 import com.burak.belediyeapp.dto.response.report.ReportListResponse;
 import com.burak.belediyeapp.dto.response.report.ReportResponse;
+import com.burak.belediyeapp.dto.response.report.ReportTimelineEntryResponse;
 import com.burak.belediyeapp.entity.AppUser;
 import com.burak.belediyeapp.entity.ReportStatus;
+import com.burak.belediyeapp.exception.BusinessException;
+import com.burak.belediyeapp.service.media.MediaGuardClient;
 import com.burak.belediyeapp.service.report.ReportService;
+import com.burak.belediyeapp.service.storage.StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,7 +26,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -32,17 +38,36 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService reportService;
-    private final com.burak.belediyeapp.service.storage.StorageService storageService;
+    private final StorageService storageService;
+    private final MediaGuardClient mediaGuardClient;
 
     @PostMapping("/upload")
-    @Operation(summary = "Rapor için fotoğraf yükle")
+    @Operation(summary = "Rapor için fotoğraf yükle (medya doğrulama ile)")
     public ResponseEntity<ApiResponse<List<String>>> uploadMedia(
-            @RequestParam("files") List<org.springframework.web.multipart.MultipartFile> files) {
-        
-        List<String> urls = files.stream()
-                .map(file -> storageService.uploadFile(file, "reports"))
-                .toList();
-        
+            @RequestParam("files") List<MultipartFile> files) {
+
+        List<String> urls = new ArrayList<>();
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) {
+                continue;
+            }
+            String ct = file.getContentType();
+            if (ct == null || !ct.startsWith("image/")) {
+                throw new BusinessException("Yalnızca görüntü dosyaları yüklenebilir.", "INVALID_MEDIA_TYPE");
+            }
+            if (file.getSize() > 12 * 1024 * 1024) {
+                throw new BusinessException("Dosya boyutu 12 MB'ı aşamaz.", "FILE_TOO_LARGE");
+            }
+            byte[] bytes;
+            try {
+                bytes = file.getBytes();
+            } catch (Exception e) {
+                throw new BusinessException("Dosya okunamadı.", "FILE_READ_ERROR");
+            }
+            mediaGuardClient.validateImageOrThrow(bytes, ct);
+            urls.add(storageService.uploadBytes(bytes, ct, "reports", file.getOriginalFilename()));
+        }
+
         return ResponseEntity.ok(ApiResponse.success("Dosyalar yüklendi", urls));
     }
 
@@ -68,6 +93,16 @@ public class ReportController {
         return ResponseEntity.ok(ApiResponse.success(page));
     }
 
+    @GetMapping("/my-assignments")
+    @Operation(summary = "Bana atanan raporlar (Saha görevlisi)")
+    public ResponseEntity<ApiResponse<Page<ReportListResponse>>> getMyAssignments(
+            @AuthenticationPrincipal AppUser currentUser,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+
+        Page<ReportListResponse> page = reportService.getMyAssignments(currentUser, pageable);
+        return ResponseEntity.ok(ApiResponse.success(page));
+    }
+
     @GetMapping
     @Operation(summary = "Tüm raporlar (Saha Ekibi ve üzeri)")
     public ResponseEntity<ApiResponse<Page<ReportListResponse>>> getAllReports(
@@ -80,6 +115,27 @@ public class ReportController {
                 : reportService.getAllReports(currentUser, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(page));
+    }
+
+    @GetMapping("/nearby")
+    @Operation(summary = "Yakındaki raporlar — PostGIS spatial sorgu (Saha Ekibi)")
+    public ResponseEntity<ApiResponse<List<ReportListResponse>>> getNearbyReports(
+            @RequestParam double latitude,
+            @RequestParam double longitude,
+            @RequestParam(defaultValue = "1000") @Min(100) @Max(50000) double radiusMeters) {
+
+        List<ReportListResponse> result = reportService.getNearbyReports(latitude, longitude, radiusMeters);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    @GetMapping("/{reportId}/timeline")
+    @Operation(summary = "Rapor yaşam döngüsü zaman çizelgesi")
+    public ResponseEntity<ApiResponse<List<ReportTimelineEntryResponse>>> getTimeline(
+            @PathVariable String reportId,
+            @AuthenticationPrincipal AppUser currentUser) {
+
+        List<ReportTimelineEntryResponse> timeline = reportService.getReportTimeline(reportId, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(timeline));
     }
 
     @GetMapping("/{reportId}")
@@ -112,16 +168,5 @@ public class ReportController {
 
         ReportResponse response = reportService.assignReport(reportId, request, currentUser);
         return ResponseEntity.ok(ApiResponse.success("Rapor atandı", response));
-    }
-
-    @GetMapping("/nearby")
-    @Operation(summary = "Yakındaki raporlar — PostGIS spatial sorgu (Saha Ekibi)")
-    public ResponseEntity<ApiResponse<List<ReportListResponse>>> getNearbyReports(
-            @RequestParam double latitude,
-            @RequestParam double longitude,
-            @RequestParam(defaultValue = "1000") @Min(100) @Max(50000) double radiusMeters) {
-
-        List<ReportListResponse> result = reportService.getNearbyReports(latitude, longitude, radiusMeters);
-        return ResponseEntity.ok(ApiResponse.success(result));
     }
 }

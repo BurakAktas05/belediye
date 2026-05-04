@@ -47,10 +47,10 @@ public class ExportService {
                 Row row = sheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(report.getId());
                 row.createCell(1).setCellValue(report.getTitle());
-                row.createCell(2).setCellValue(report.getCategory().getName());
-                row.createCell(3).setCellValue(report.getDistrict());
-                row.createCell(4).setCellValue(report.getReportStatus().toString());
-                row.createCell(5).setCellValue(report.getCreatedAt().toString());
+                row.createCell(2).setCellValue(report.getCategory() != null ? report.getCategory().getName() : "");
+                row.createCell(3).setCellValue(report.getDistrict() != null ? report.getDistrict() : "");
+                row.createCell(4).setCellValue(report.getReportStatus() != null ? report.getReportStatus().toString() : "");
+                row.createCell(5).setCellValue(report.getCreatedAt() != null ? report.getCreatedAt().toString() : "");
             }
 
             for (int i = 0; i < headers.length; i++) {
